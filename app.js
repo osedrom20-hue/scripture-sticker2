@@ -52,7 +52,8 @@ const stickerLibraryItems = document.querySelectorAll(".sticker-library-item");
 const AUTO_OPACITY = "30";
 const AUTO_EDGE_SOFTNESS = "6";
 const AUTO_COLOR_BOOST = "120";
-const STICKER_UNLOCK_DELAY = 2000;
+const STICKER_DOUBLE_TAP_DELAY = 350;
+const STICKER_DOUBLE_TAP_DISTANCE = 28;
 
 let textStepDone = false;
 let stickerStepDone = false;
@@ -77,9 +78,10 @@ let selectedLibraryStickerSrc = "stickers/arrependimento.png";
 let selectedLibraryStickerName = "Arrependimento";
 
 let stickerLocked = false;
-let stickerUnlockTimer = null;
-let stickerUnlockStartX = 0;
-let stickerUnlockStartY = 0;
+let lastStickerTapTime = 0;
+let lastStickerTapX = 0;
+let lastStickerTapY = 0;
+let activeStickerPointerId = null;
 
 const mobilePanelTitles = {
   text: "Texto",
@@ -316,26 +318,65 @@ function getPointerPosition(event) {
   };
 }
 
-function clearStickerUnlockTimer() {
-  if (stickerUnlockTimer) {
-    clearTimeout(stickerUnlockTimer);
-    stickerUnlockTimer = null;
-  }
-
-  window.removeEventListener("pointermove", cancelStickerUnlockOnMove);
-  window.removeEventListener("pointerup", clearStickerUnlockTimer);
-  window.removeEventListener("pointercancel", clearStickerUnlockTimer);
+function isSameStickerPointer(event) {
+  return (
+    activeStickerPointerId === null ||
+    event.pointerId === undefined ||
+    event.pointerId === activeStickerPointerId
+  );
 }
 
-function cancelStickerUnlockOnMove(event) {
-  const pointer = getPointerPosition(event);
+function captureStickerPointer(event) {
+  activeStickerPointerId = event.pointerId ?? null;
 
-  const moveX = Math.abs(pointer.x - stickerUnlockStartX);
-  const moveY = Math.abs(pointer.y - stickerUnlockStartY);
-
-  if (moveX > 10 || moveY > 10) {
-    clearStickerUnlockTimer();
+  if (event.pointerId !== undefined && sticker.setPointerCapture) {
+    try {
+      sticker.setPointerCapture(event.pointerId);
+    } catch (error) {
+      // Alguns navegadores podem falhar se o ponteiro já foi liberado.
+    }
   }
+}
+
+function releaseStickerPointer(event) {
+  if (event && event.pointerId !== undefined && sticker.releasePointerCapture) {
+    try {
+      sticker.releasePointerCapture(event.pointerId);
+    } catch (error) {
+      // Ignora quando o navegador já liberou o ponteiro.
+    }
+  }
+
+  activeStickerPointerId = null;
+}
+
+function resetStickerDoubleTapState() {
+  lastStickerTapTime = 0;
+  lastStickerTapX = 0;
+  lastStickerTapY = 0;
+}
+
+function isStickerDoubleTap(pointer) {
+  const now = Date.now();
+  const elapsed = now - lastStickerTapTime;
+  const distanceX = Math.abs(pointer.x - lastStickerTapX);
+  const distanceY = Math.abs(pointer.y - lastStickerTapY);
+
+  const isDoubleTap =
+    elapsed > 0 &&
+    elapsed <= STICKER_DOUBLE_TAP_DELAY &&
+    distanceX <= STICKER_DOUBLE_TAP_DISTANCE &&
+    distanceY <= STICKER_DOUBLE_TAP_DISTANCE;
+
+  lastStickerTapTime = now;
+  lastStickerTapX = pointer.x;
+  lastStickerTapY = pointer.y;
+
+  if (isDoubleTap) {
+    resetStickerDoubleTapState();
+  }
+
+  return isDoubleTap;
 }
 
 function beginStickerDrag(pointer) {
@@ -347,7 +388,7 @@ function beginStickerDrag(pointer) {
   dragOffsetX = pointer.x - stickerRect.left;
   dragOffsetY = pointer.y - stickerRect.top;
 
-  window.addEventListener("pointermove", drag);
+  window.addEventListener("pointermove", drag, { passive: false });
   window.addEventListener("pointerup", stopDrag);
   window.addEventListener("pointercancel", stopDrag);
 }
@@ -356,36 +397,29 @@ function startDrag(event) {
   if (!stickerStepDone) return;
 
   event.preventDefault();
+  event.stopPropagation();
 
   const pointer = getPointerPosition(event);
 
   if (stickerLocked) {
-    stickerUnlockStartX = pointer.x;
-    stickerUnlockStartY = pointer.y;
+    if (!isStickerDoubleTap(pointer)) return;
 
-    sticker.classList.add("selected");
-    clearStickerUnlockTimer();
-
-    stickerUnlockTimer = setTimeout(() => {
-      stickerLocked = false;
-      clearStickerUnlockTimer();
-      beginStickerDrag(pointer);
-    }, STICKER_UNLOCK_DELAY);
-
-    window.addEventListener("pointermove", cancelStickerUnlockOnMove);
-    window.addEventListener("pointerup", clearStickerUnlockTimer);
-    window.addEventListener("pointercancel", clearStickerUnlockTimer);
-
+    stickerLocked = false;
+    captureStickerPointer(event);
+    beginStickerDrag(pointer);
     return;
   }
 
+  resetStickerDoubleTapState();
+  captureStickerPointer(event);
   beginStickerDrag(pointer);
 }
 
 function drag(event) {
-  if (!isDragging) return;
+  if (!isDragging || !isSameStickerPointer(event)) return;
 
   event.preventDefault();
+  event.stopPropagation();
 
   const pointer = getPointerPosition(event);
   const pageRect = captureArea.getBoundingClientRect();
@@ -407,13 +441,24 @@ function drag(event) {
   shareStepDone = false;
 }
 
-function stopDrag() {
+function stopDrag(event) {
+  if (event && !isSameStickerPointer(event)) return;
+
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
   isDragging = false;
   stickerLocked = true;
+  sticker.classList.remove("selected");
 
   window.removeEventListener("pointermove", drag);
   window.removeEventListener("pointerup", stopDrag);
   window.removeEventListener("pointercancel", stopDrag);
+
+  resetStickerDoubleTapState();
+  releaseStickerPointer(event);
 
   updateGuideGlow();
 }
@@ -1007,7 +1052,11 @@ if (stickerLibraryModal) {
   });
 }
 
-sticker.addEventListener("pointerdown", startDrag);
+sticker.addEventListener("pointerdown", startDrag, { passive: false });
+
+sticker.addEventListener("dragstart", (event) => {
+  event.preventDefault();
+});
 
 sticker.addEventListener("contextmenu", (event) => {
   event.preventDefault();
@@ -1200,6 +1249,11 @@ window.addEventListener("load", () => {
   if (firstLibraryItem) {
     selectStickerFromLibrary(firstLibraryItem);
   }
+
+  sticker.setAttribute("draggable", "false");
+  sticker.style.touchAction = "none";
+  sticker.style.userSelect = "none";
+  sticker.style.webkitUserDrag = "none";
 
   hideSticker();
 
