@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scripture Stickers | Adesivos das Escrituras</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1f4e5f" />
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+
+<body>
+  <header class="app-header">
+    <div>
+      <h1>Scripture Stickers</h1>
+      <p>Adesivos digitais translúcidos para estudo das escrituras</p>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel controls-panel mobile-drawer" id="controlsDrawer">
+      <div class="mobile-drawer-header">
+        <strong id="mobileDrawerTitle">Controles</strong>
+        <button id="closeDrawerBtn" type="button" class="mobile-drawer-close">Fechar</button>
+      </div>
+
+      <div class="mobile-panel-block" data-panel="text">
+        <h2>Texto</h2>
+
+        <label for="scriptureInput">Cole aqui o texto da escritura</label>
+        <textarea id="scriptureInput" spellcheck="false">Chapter 2
+
+Lehi takes his family into the wilderness by the Red Sea—They leave their property—Lehi offers a sacrifice to the Lord and teaches his sons to keep the commandments—Laman and Lemuel murmur against their father—Nephi is obedient and prays in faith; the Lord speaks to him, and he is chosen to rule over his brethren. About 600 B.C.
+
+1 For behold, it came to pass that the Lord spake unto my father, yea, even in a dream, and said unto him: Blessed art thou Lehi, because of the things which thou hast done; and because thou hast been faithful and declared unto this people the things which I commanded thee, behold, they seek to take away thy life.
+
+2 And it came to pass that the Lord commanded my father, even in a dream, that he should take his family and depart into the wilderness.
+
+3 And it came to pass that he was obedient unto the word of the Lord, wherefore he did as the Lord commanded him.</textarea>
+
+        <div class="button-row">
+          <button id="applyTextBtn" class="primary-btn">Aplicar texto</button>
+          <button id="newProjectBtn" type="button">Novo projeto</button>
+        </div>
+      </div>
+
+      <div class="mobile-panel-block" data-panel="sticker">
+        <h2>Sticker</h2>
+
+        <div class="button-row">
+          <button id="openStickerLibraryBtn" type="button" class="primary-btn">Biblioteca</button>
+        </div>
+
+        <label for="stickerUpload">Carregar sticker transparente</label>
+        <input id="stickerUpload" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" />
+
+        <div class="control-group">
+          <label for="projectNameInput">Nome do projeto</label>
+          <input
+            id="projectNameInput"
+            type="text"
+            placeholder="Ex: arrependimento-alma-42"
+          />
+        </div>
+
+        <div class="control-group">
+          <label for="backgroundSelect">Fundo</label>
+          <select id="backgroundSelect">
+            <option value="white">Branco</option>
+            <option value="cream">Creme</option>
+            <option value="blue">Azul claro</option>
+            <option value="pink">Rosa/lilás claro</option>
+            <option value="peach">Pêssego</option>
+          </select>
+        </div>
+
+        <button id="resetStickerBtn" type="button">Centralizar sticker</button>
+      </div>
+
+      <div class="mobile-panel-block" data-panel="size">
+        <h2>Tamanho</h2>
+
+        <div class="control-group">
+          <label for="sizeRange">Tamanho do sticker</label>
+          <input id="sizeRange" type="range" min="60" max="520" value="210" />
+          <span id="sizeValue">210 px</span>
+        </div>
+      </div>
+
+      <div class="mobile-panel-block" data-panel="actions">
+        <h2>Ações</h2>
+
+        <div class="button-row">
+          <button id="saveProjectBtn" type="button">Guardar projeto</button>
+          <button id="loadProjectBtn" type="button">Abrir projeto</button>
+
+          <button id="exportProjectBtn" type="button">Exportar projeto</button>
+          <button id="importProjectBtn" type="button">Importar projeto</button>
+          <input id="importProjectInput" type="file" accept=".json,application/json" hidden />
+
+          <button id="exportBtn" type="button" class="primary-btn">Salvar imagem</button>
+          <button id="shareBtn" type="button" class="primary-btn">Compartilhar</button>
+        </div>
+      </div>
+
+      <p class="note">
+        Ajuste o sticker sobre o texto. No modo simples, use apenas tamanho e posição.
+      </p>
+    </section>
+
+    <section class="workspace" id="editorStage">
+      <div class="phone-frame">
+        <div id="captureArea" class="scripture-page">
+          <article id="scriptureText" class="scripture-text"></article>
+
+          <img
+            id="sticker"
+            class="sticker"
+            src="stickers/arrependimento.svg"
+            alt="Sticker digital"
+            draggable="false"
+          />
+        </div>
+      </div>
+
+      <button id="mobileMenuTrigger" class="mobile-menu-trigger" type="button" aria-label="Abrir menu">
+        ✦
+      </button>
+
+      <nav id="floatingToolbar" class="floating-toolbar" aria-hidden="true">
+        <button type="button" data-mobile-panel="text" title="Texto">
+          <img src="icons/menu/icons8-paste-as-text-50.png" alt="Texto" />
+        </button>
+
+        <button type="button" data-mobile-panel="sticker" title="Sticker">
+          <img src="icons/menu/icons8-sticker-64.png" alt="Sticker" />
+        </button>
+
+        <button type="button" data-mobile-panel="size" title="Tamanho">
+          <img src="icons/menu/icons8-resize-64.png" alt="Tamanho" />
+        </button>
+
+        <button type="button" data-direct-action="center" title="Centralizar">
+          <img src="icons/menu/icons8-center-64.png" alt="Centralizar" />
+        </button>
+
+        <button type="button" data-direct-action="advanced" title="Ajustes avançados">
+          <img src="icons/menu/icons8-setting-58.png" alt="Ajustes" />
+        </button>
+
+        <button type="button" data-direct-action="save" title="Salvar">
+          <img src="icons/menu/icons8-save-as-94.png" alt="Salvar" />
+        </button>
+
+        <button type="button" data-direct-action="share" title="Compartilhar">
+          <img src="icons/menu/icons8-share-48.png" alt="Compartilhar" />
+        </button>
+
+        <button type="button" data-direct-action="close" title="Fechar">
+          <img src="icons/menu/icons8-close-94.png" alt="Fechar" />
+        </button>
+      </nav>
+
+      <div id="advancedSubmenu" class="advanced-submenu" aria-hidden="true">
+        <div class="control-group">
+          <label for="opacityRange">Transparência</label>
+          <input id="opacityRange" type="range" min="5" max="100" value="30" />
+          <span id="opacityValue">30%</span>
+        </div>
+
+        <div class="control-group">
+          <label for="edgeSoftnessRange">Suavizar bordas</label>
+          <input type="range" id="edgeSoftnessRange" min="0" max="30" value="6" />
+          <span id="edgeSoftnessValue">6 px</span>
+        </div>
+
+        <div class="control-group">
+          <label for="colorBoostRange">Intensidade da cor</label>
+          <input type="range" id="colorBoostRange" min="0" max="200" value="120" />
+          <span id="colorBoostValue">120%</span>
+        </div>
+      </div>
+
+      <div id="stickerLibraryModal" class="sticker-library-modal" aria-hidden="true" hidden>
+        <div class="sticker-library-box">
+          <div class="sticker-library-header">
+            <h2>Biblioteca de stickers</h2>
+            <button id="closeStickerLibraryBtn" type="button">Fechar</button>
+          </div>
+
+          <div class="sticker-library-content">
+            <div class="sticker-library-list">
+  <button
+    type="button"
+    class="sticker-library-item selected"
+    data-sticker-src="stickers/arrependimento.png"
+    data-sticker-name="Arrependimento"
+  >
+    <img src="stickers/arrependimento.png" alt="Arrependimento" />
+    <span>Arrependimento</span>
+  </button>
+
+  <button
+    type="button"
+    class="sticker-library-item"
+    data-sticker-src="stickers/jesucristo.png"
+    data-sticker-name="Jesus Cristo"
+  >
+    <img src="stickers/jesucristo.png" alt="Jesus Cristo" />
+    <span>Jesus Cristo</span>
+  </button>
+
+  <button
+    type="button"
+    class="sticker-library-item"
+    data-sticker-src="stickers/templo.png"
+    data-sticker-name="Templo"
+  >
+    <img src="stickers/templo.png" alt="Templo" />
+    <span>Templo</span>
+  </button>
+
+  <button
+    type="button"
+    class="sticker-library-item"
+    data-sticker-src="stickers/escrituras.png"
+    data-sticker-name="Escrituras"
+  >
+    <img src="stickers/escrituras.png" alt="Escrituras" />
+    <span>Escrituras</span>
+  </button>
+
+  <button
+    type="button"
+    class="sticker-library-item"
+    data-sticker-src="stickers/familia-orando.png"
+    data-sticker-name="Família orando"
+  >
+    <img src="stickers/familia-orando.png" alt="Família orando" />
+    <span>Família orando</span>
+  </button>
+
+  <button
+    type="button"
+    class="sticker-library-item"
+    data-sticker-src="stickers/hombre-orando.png"
+    data-sticker-name="Homem orando"
+  >
+    <img src="stickers/hombre-orando.png" alt="Homem orando" />
+    <span>Homem orando</span>
+  </button>
+
+  <button
+    type="button"
+    class="sticker-library-item"
+    data-sticker-src="stickers/joven-orando.png"
+    data-sticker-name="Jovem orando"
+  >
+    <img src="stickers/joven-orando.png" alt="Jovem orando" />
+    <span>Jovem orando</span>
+  </button>
+
+  <button
+    type="button"
+    class="sticker-library-item"
+    data-sticker-src="stickers/criancas-orando.png"
+    data-sticker-name="Crianças orando"
+  >
+    <img src="stickers/criancas-orando.png" alt="Crianças orando" />
+    <span>Crianças orando</span>
+  </button>
+</div>
+
+            <div class="sticker-library-preview">
+              <p>Vista prévia</p>
+              <img
+                id="stickerLibraryPreview"
+                src="stickers/arrependimento.png"
+                alt="Vista prévia do sticker"
+              />
+              <strong id="stickerLibraryName">Arrependimento</strong>
+            </div>
+          </div>
+
+          <div class="sticker-library-actions">
+            <button id="useSelectedStickerBtn" type="button" class="primary-btn">
+              Usar este sticker
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>V1 experimental — Scripture Stickers / Adesivos das Escrituras</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+  <defs>
+    <radialGradient id="softLight" cx="50%" cy="42%" r="60%">
+      <stop offset="0%" stop-color="#fff7cc" stop-opacity="0.85"/>
+      <stop offset="55%" stop-color="#f4c56a" stop-opacity="0.38"/>
+      <stop offset="100%" stop-color="#b85c3d" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="street" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#39475c" stop-opacity="0.34"/>
+      <stop offset="100%" stop-color="#af6d40" stop-opacity="0.22"/>
+    </linearGradient>
+    <filter id="softBlur"><feGaussianBlur stdDeviation="1.2"/></filter>
+  </defs>
+
+  <rect width="600" height="600" fill="none"/>
+  <ellipse cx="300" cy="305" rx="260" ry="245" fill="url(#softLight)"/>
+
+  <g opacity="0.54" filter="url(#softBlur)">
+    <path d="M70 210 C160 180 240 175 310 200 C395 230 475 215 540 180"
+      fill="none" stroke="#516880" stroke-width="18" stroke-linecap="round"/>
+    <path d="M95 465 C185 382 236 320 300 265 C372 204 440 190 520 150"
+      fill="none" stroke="url(#street)" stroke-width="80" stroke-linecap="round"/>
+    <rect x="58" y="250" width="55" height="150" rx="6" fill="#2e4f69" opacity="0.35"/>
+    <rect x="120" y="215" width="70" height="190" rx="8" fill="#aa6a43" opacity="0.28"/>
+    <rect x="420" y="210" width="65" height="185" rx="8" fill="#31556f" opacity="0.28"/>
+    <rect x="500" y="245" width="48" height="135" rx="6" fill="#a95748" opacity="0.28"/>
+    <circle cx="145" cy="278" r="9" fill="#f1b34f" opacity="0.65"/>
+    <circle cx="455" cy="285" r="8" fill="#f1b34f" opacity="0.58"/>
+    <circle cx="520" cy="315" r="7" fill="#f1b34f" opacity="0.48"/>
+  </g>
+
+  <g opacity="0.72">
+    <circle cx="270" cy="345" r="22" fill="#6b4a36"/>
+    <path d="M252 375 C250 415 255 460 263 510" fill="none" stroke="#4e5d6e" stroke-width="24" stroke-linecap="round"/>
+    <path d="M287 378 C306 415 312 456 326 500" fill="none" stroke="#604d43" stroke-width="22" stroke-linecap="round"/>
+    <path d="M251 396 C222 420 204 445 188 470" fill="none" stroke="#4e5d6e" stroke-width="18" stroke-linecap="round"/>
+    <path d="M288 399 C318 421 342 438 370 455" fill="none" stroke="#604d43" stroke-width="18" stroke-linecap="round"/>
+    <path d="M252 365 C270 352 292 355 305 375 C287 392 266 392 252 365Z" fill="#5a6f82"/>
+  </g>
+
+  <g opacity="0.82" transform="translate(372 230)">
+    <line x1="60" y1="118" x2="60" y2="270" stroke="#6b5a4a" stroke-width="13" stroke-linecap="round"/>
+    <polygon points="60,0 103,18 120,60 103,102 60,120 17,102 0,60 17,18"
+      fill="#c84536" stroke="#873126" stroke-width="8"/>
+    <text x="60" y="72" text-anchor="middle" font-family="Arial, Helvetica, sans-serif"
+      font-size="34" font-weight="800" fill="#ffffff">PARE</text>
+  </g>
+
+  <path d="M430 205 C385 188 348 184 315 192" fill="none" stroke="#fff3b0"
+    stroke-width="16" stroke-linecap="round" opacity="0.52"/>
+  <path d="M434 204 C382 170 330 165 280 185" fill="none" stroke="#d99a3a"
+    stroke-width="4" stroke-linecap="round" opacity="0.58"/>
+</svg>
