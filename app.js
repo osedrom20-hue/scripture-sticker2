@@ -52,6 +52,7 @@ const stickerLibraryItems = document.querySelectorAll(".sticker-library-item");
 const AUTO_OPACITY = "30";
 const AUTO_EDGE_SOFTNESS = "6";
 const AUTO_COLOR_BOOST = "120";
+const STICKER_UNLOCK_DELAY = 2000;
 
 let textStepDone = false;
 let stickerStepDone = false;
@@ -74,7 +75,11 @@ let longPressStartY = 0;
 
 let selectedLibraryStickerSrc = "stickers/arrependimento.png";
 let selectedLibraryStickerName = "Arrependimento";
+
 let stickerLocked = false;
+let stickerUnlockTimer = null;
+let stickerUnlockStartX = 0;
+let stickerUnlockStartY = 0;
 
 const mobilePanelTitles = {
   text: "Texto",
@@ -311,13 +316,31 @@ function getPointerPosition(event) {
   };
 }
 
-function startDrag(event) {
-  if (!stickerStepDone || stickerLocked) return;
+function clearStickerUnlockTimer() {
+  if (stickerUnlockTimer) {
+    clearTimeout(stickerUnlockTimer);
+    stickerUnlockTimer = null;
+  }
 
-  event.preventDefault();
+  window.removeEventListener("pointermove", cancelStickerUnlockOnMove);
+  window.removeEventListener("pointerup", clearStickerUnlockTimer);
+  window.removeEventListener("pointercancel", clearStickerUnlockTimer);
+}
+
+function cancelStickerUnlockOnMove(event) {
+  const pointer = getPointerPosition(event);
+
+  const moveX = Math.abs(pointer.x - stickerUnlockStartX);
+  const moveY = Math.abs(pointer.y - stickerUnlockStartY);
+
+  if (moveX > 10 || moveY > 10) {
+    clearStickerUnlockTimer();
+  }
+}
+
+function beginStickerDrag(pointer) {
   sticker.classList.add("selected");
 
-  const pointer = getPointerPosition(event);
   const stickerRect = sticker.getBoundingClientRect();
 
   isDragging = true;
@@ -326,6 +349,37 @@ function startDrag(event) {
 
   window.addEventListener("pointermove", drag);
   window.addEventListener("pointerup", stopDrag);
+  window.addEventListener("pointercancel", stopDrag);
+}
+
+function startDrag(event) {
+  if (!stickerStepDone) return;
+
+  event.preventDefault();
+
+  const pointer = getPointerPosition(event);
+
+  if (stickerLocked) {
+    stickerUnlockStartX = pointer.x;
+    stickerUnlockStartY = pointer.y;
+
+    sticker.classList.add("selected");
+    clearStickerUnlockTimer();
+
+    stickerUnlockTimer = setTimeout(() => {
+      stickerLocked = false;
+      clearStickerUnlockTimer();
+      beginStickerDrag(pointer);
+    }, STICKER_UNLOCK_DELAY);
+
+    window.addEventListener("pointermove", cancelStickerUnlockOnMove);
+    window.addEventListener("pointerup", clearStickerUnlockTimer);
+    window.addEventListener("pointercancel", clearStickerUnlockTimer);
+
+    return;
+  }
+
+  beginStickerDrag(pointer);
 }
 
 function drag(event) {
@@ -355,9 +409,11 @@ function drag(event) {
 
 function stopDrag() {
   isDragging = false;
+  stickerLocked = true;
 
   window.removeEventListener("pointermove", drag);
   window.removeEventListener("pointerup", stopDrag);
+  window.removeEventListener("pointercancel", stopDrag);
 
   updateGuideGlow();
 }
@@ -592,7 +648,7 @@ function loadStickerFromFile(event) {
     applyAutomaticStickerSettings();
 
     stickerStepDone = true;
-    stickerLocked = true;
+    stickerLocked = false;
     sizeStepDone = false;
     projectStepDone = false;
     exportStepDone = false;
@@ -654,7 +710,7 @@ function useSelectedStickerFromLibrary() {
   applyAutomaticStickerSettings();
 
   stickerStepDone = true;
-  stickerLocked = true;
+  stickerLocked = false;
   sizeStepDone = false;
   projectStepDone = false;
   exportStepDone = false;
@@ -952,6 +1008,10 @@ if (stickerLibraryModal) {
 }
 
 sticker.addEventListener("pointerdown", startDrag);
+
+sticker.addEventListener("contextmenu", (event) => {
+  event.preventDefault();
+});
 
 resetStickerBtn.addEventListener("click", () => {
   centerSticker();
