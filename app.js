@@ -54,7 +54,7 @@ const AUTO_EDGE_SOFTNESS = "6";
 const AUTO_COLOR_BOOST = "120";
 const STICKER_DOUBLE_TAP_DELAY = 350;
 const STICKER_DOUBLE_TAP_DISTANCE = 28;
-
+const STICKER_DRAG_START_DISTANCE = 6;
 let textStepDone = false;
 let stickerStepDone = false;
 let backgroundStepDone = false;
@@ -82,7 +82,8 @@ let lastStickerTapTime = 0;
 let lastStickerTapX = 0;
 let lastStickerTapY = 0;
 let activeStickerPointerId = null;
-
+let pendingUnlockedPointer = null;
+let pendingUnlockedPointerId = null;
 const mobilePanelTitles = {
   text: "Texto",
   sticker: "Sticker",
@@ -378,7 +379,62 @@ function isStickerDoubleTap(pointer) {
 
   return isDoubleTap;
 }
+function samePendingUnlockPointer(event) {
+  return (
+    pendingUnlockedPointerId === null ||
+    event.pointerId === undefined ||
+    event.pointerId === pendingUnlockedPointerId
+  );
+}
 
+function clearPendingStickerUnlockEvents() {
+  window.removeEventListener("pointermove", handleUnlockedSecondTapMove);
+  window.removeEventListener("pointerup", finishStickerUnlockTap);
+  window.removeEventListener("pointercancel", finishStickerUnlockTap);
+
+  pendingUnlockedPointer = null;
+  pendingUnlockedPointerId = null;
+}
+
+function handleUnlockedSecondTapMove(event) {
+  if (!pendingUnlockedPointer || !samePendingUnlockPointer(event)) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const pointer = getPointerPosition(event);
+
+  const moveX = Math.abs(pointer.x - pendingUnlockedPointer.x);
+  const moveY = Math.abs(pointer.y - pendingUnlockedPointer.y);
+
+  if (
+    moveX < STICKER_DRAG_START_DISTANCE &&
+    moveY < STICKER_DRAG_START_DISTANCE
+  ) {
+    return;
+  }
+
+  const startPointer = pendingUnlockedPointer;
+
+  clearPendingStickerUnlockEvents();
+  beginStickerDrag(startPointer);
+  drag(event);
+}
+
+function finishStickerUnlockTap(event) {
+  if (event && !samePendingUnlockPointer(event)) return;
+
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  clearPendingStickerUnlockEvents();
+  releaseStickerPointer(event);
+
+  stickerLocked = false;
+  sticker.classList.add("selected");
+}
 function beginStickerDrag(pointer) {
   sticker.classList.add("selected");
 
@@ -398,6 +454,7 @@ function startDrag(event) {
 
   event.preventDefault();
   event.stopPropagation();
+  clearPendingStickerUnlockEvents();
 
   const pointer = getPointerPosition(event);
 
