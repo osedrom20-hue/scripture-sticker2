@@ -72,8 +72,9 @@ let longPressTimer = null;
 let longPressStartX = 0;
 let longPressStartY = 0;
 
-let selectedLibraryStickerSrc = "stickers/arrependimento.svg";
+let selectedLibraryStickerSrc = "stickers/arrependimento.png";
 let selectedLibraryStickerName = "Arrependimento";
+let stickerLocked = false;
 
 const mobilePanelTitles = {
   text: "Texto",
@@ -151,6 +152,7 @@ function updateGuideGlow() {
 
 function resetWorkflowAfterTextChange() {
   stickerStepDone = false;
+  stickerLocked = false;
   backgroundStepDone = false;
   opacityStepDone = false;
   sizeStepDone = false;
@@ -310,7 +312,7 @@ function getPointerPosition(event) {
 }
 
 function startDrag(event) {
-  if (!stickerStepDone) return;
+  if (!stickerStepDone || stickerLocked) return;
 
   event.preventDefault();
   sticker.classList.add("selected");
@@ -403,10 +405,12 @@ function applyProjectData(projectData, markAsSaved = true) {
     sticker.src = projectData.stickerSrc;
     showSticker();
     stickerStepDone = true;
+    stickerLocked = true;
   } else {
     sticker.removeAttribute("src");
     hideSticker();
     stickerStepDone = false;
+    stickerLocked = false;
   }
 
   sticker.style.left = projectData.stickerLeft || "110px";
@@ -527,6 +531,7 @@ function newProject() {
 
   textStepDone = false;
   stickerStepDone = false;
+  stickerLocked = false;
   backgroundStepDone = false;
   opacityStepDone = false;
   sizeStepDone = false;
@@ -587,6 +592,7 @@ function loadStickerFromFile(event) {
     applyAutomaticStickerSettings();
 
     stickerStepDone = true;
+    stickerLocked = true;
     sizeStepDone = false;
     projectStepDone = false;
     exportStepDone = false;
@@ -648,6 +654,7 @@ function useSelectedStickerFromLibrary() {
   applyAutomaticStickerSettings();
 
   stickerStepDone = true;
+  stickerLocked = true;
   sizeStepDone = false;
   projectStepDone = false;
   exportStepDone = false;
@@ -898,6 +905,7 @@ scriptureInput.addEventListener("input", () => {
     scriptureText.textContent = "";
     textStepDone = false;
     resetWorkflowAfterTextChange();
+    stickerLocked = false;
     hideSticker();
   } else {
     textStepDone = false;
@@ -1125,7 +1133,9 @@ window.addEventListener("resize", () => {
 });
 
 window.addEventListener("load", () => {
-  const firstLibraryItem = document.querySelector(".sticker-library-item.selected") || document.querySelector(".sticker-library-item");
+  const firstLibraryItem =
+    document.querySelector(".sticker-library-item.selected") ||
+    document.querySelector(".sticker-library-item");
 
   if (firstLibraryItem) {
     selectStickerFromLibrary(firstLibraryItem);
