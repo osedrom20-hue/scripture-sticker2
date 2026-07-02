@@ -3,10 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Scripture Stickers | Adesivos das Escrituras</title>
+
   <link rel="stylesheet" href="style.css" />
-  <link rel="manifest" href="manifest.json" />
+
   <meta name="theme-color" content="#1f4e5f" />
+
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 
@@ -22,13 +25,16 @@
     <section class="panel controls-panel mobile-drawer" id="controlsDrawer">
       <div class="mobile-drawer-header">
         <strong id="mobileDrawerTitle">Controles</strong>
-        <button id="closeDrawerBtn" type="button" class="mobile-drawer-close">Fechar</button>
+        <button id="closeDrawerBtn" type="button" class="mobile-drawer-close">
+          Fechar
+        </button>
       </div>
 
       <div class="mobile-panel-block" data-panel="text">
         <h2>Texto</h2>
 
         <label for="scriptureInput">Cole aqui o texto da escritura</label>
+
         <textarea id="scriptureInput" spellcheck="false">Chapter 2
 
 Lehi takes his family into the wilderness by the Red Sea—They leave their property—Lehi offers a sacrifice to the Lord and teaches his sons to keep the commandments—Laman and Lemuel murmur against their father—Nephi is obedient and prays in faith; the Lord speaks to him, and he is chosen to rule over his brethren. About 600 B.C.
@@ -39,8 +45,31 @@ Lehi takes his family into the wilderness by the Red Sea—They leave their prop
 
 3 And it came to pass that he was obedient unto the word of the Lord, wherefore he did as the Lord commanded him.</textarea>
 
+        <div class="material-import-row">
+          <button
+            id="materialImportBtn"
+            class="import-material-btn"
+            type="button"
+          >
+            Importar material
+          </button>
+          <input
+            id="materialImportInput"
+            type="file"
+            accept=".txt,.docx,.pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf"
+            hidden
+          />
+          <p
+            id="materialImportStatus"
+            class="material-import-status"
+            aria-live="polite"
+          ></p>
+        </div>
+
         <div class="button-row">
-          <button id="applyTextBtn" class="primary-btn">Aplicar texto</button>
+          <button id="applyTextBtn" class="primary-btn" type="button">
+            Aplicar texto
+          </button>
           <button id="newProjectBtn" type="button">Novo projeto</button>
         </div>
       </div>
@@ -48,12 +77,44 @@ Lehi takes his family into the wilderness by the Red Sea—They leave their prop
       <div class="mobile-panel-block" data-panel="sticker">
         <h2>Sticker</h2>
 
-        <div class="button-row">
-          <button id="openStickerLibraryBtn" type="button" class="primary-btn">Biblioteca</button>
+        <div class="button-row sticker-actions-row">
+          <button id="openStickerLibraryBtn" type="button" class="primary-btn">
+            Biblioteca
+          </button>
+          <button
+            id="stickerUploadBtn"
+            class="file-action-btn"
+            type="button"
+          >
+            Carregar sticker
+          </button>
+        </div>
+
+        <div class="sticker-limit-row" aria-live="polite">
+          <span
+            id="stickerCounterLabel"
+            class="sticker-counter-label"
+            data-sticker-counter
+          >
+            Stickers 0/3
+          </span>
+          <span
+            id="stickerLimitNotice"
+            class="sticker-limit-notice"
+            data-sticker-limit-notice
+            aria-hidden="true"
+          >
+            Limite atingido
+          </span>
         </div>
 
         <label for="stickerUpload">Carregar sticker transparente</label>
-        <input id="stickerUpload" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" />
+        <input
+          id="stickerUpload"
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+          hidden
+        />
 
         <div class="control-group">
           <label for="projectNameInput">Nome do projeto</label>
@@ -75,7 +136,9 @@ Lehi takes his family into the wilderness by the Red Sea—They leave their prop
           </select>
         </div>
 
-        <button id="resetStickerBtn" type="button">Centralizar sticker</button>
+        <button id="resetStickerBtn" type="button">
+          Centralizar sticker
+        </button>
       </div>
 
       <div class="mobile-panel-block" data-panel="size">
@@ -97,10 +160,21 @@ Lehi takes his family into the wilderness by the Red Sea—They leave their prop
 
           <button id="exportProjectBtn" type="button">Exportar projeto</button>
           <button id="importProjectBtn" type="button">Importar projeto</button>
-          <input id="importProjectInput" type="file" accept=".json,application/json" hidden />
 
-          <button id="exportBtn" type="button" class="primary-btn">Salvar imagem</button>
-          <button id="shareBtn" type="button" class="primary-btn">Compartilhar</button>
+          <input
+            id="importProjectInput"
+            type="file"
+            accept=".json,application/json"
+            hidden
+          />
+
+          <button id="exportBtn" type="button" class="primary-btn">
+            Salvar imagem
+          </button>
+
+          <button id="shareBtn" type="button" class="primary-btn">
+            Compartilhar
+          </button>
         </div>
       </div>
 
@@ -111,20 +185,38 @@ Lehi takes his family into the wilderness by the Red Sea—They leave their prop
 
     <section class="workspace" id="editorStage">
       <div class="phone-frame">
+        <div class="sticker-stage-status" aria-live="polite">
+          <span class="sticker-counter-label" data-sticker-counter>
+            Stickers 0/3
+          </span>
+          <span
+            class="sticker-limit-notice stage-limit-notice"
+            data-sticker-limit-notice
+            aria-hidden="true"
+          >
+            Limite atingido
+          </span>
+        </div>
+
         <div id="captureArea" class="scripture-page">
           <article id="scriptureText" class="scripture-text"></article>
 
           <img
             id="sticker"
             class="sticker"
-            src="stickers/arrependimento.svg"
+            src="stickers/principios/arrependimento/arrependimento-01.png"
             alt="Sticker digital"
             draggable="false"
           />
         </div>
       </div>
 
-      <button id="mobileMenuTrigger" class="mobile-menu-trigger" type="button" aria-label="Abrir menu">
+      <button
+        id="mobileMenuTrigger"
+        class="mobile-menu-trigger"
+        type="button"
+        aria-label="Abrir menu"
+      >
         ✦
       </button>
 
@@ -171,18 +263,35 @@ Lehi takes his family into the wilderness by the Red Sea—They leave their prop
 
         <div class="control-group">
           <label for="edgeSoftnessRange">Suavizar bordas</label>
-          <input type="range" id="edgeSoftnessRange" min="0" max="30" value="6" />
+          <input
+            id="edgeSoftnessRange"
+            type="range"
+            min="0"
+            max="30"
+            value="6"
+          />
           <span id="edgeSoftnessValue">6 px</span>
         </div>
 
         <div class="control-group">
           <label for="colorBoostRange">Intensidade da cor</label>
-          <input type="range" id="colorBoostRange" min="0" max="200" value="120" />
+          <input
+            id="colorBoostRange"
+            type="range"
+            min="0"
+            max="200"
+            value="120"
+          />
           <span id="colorBoostValue">120%</span>
         </div>
       </div>
 
-      <div id="stickerLibraryModal" class="sticker-library-modal" aria-hidden="true" hidden>
+      <div
+        id="stickerLibraryModal"
+        class="sticker-library-modal"
+        aria-hidden="true"
+        hidden
+      >
         <div class="sticker-library-box">
           <div class="sticker-library-header">
             <h2>Biblioteca de stickers</h2>
@@ -190,93 +299,23 @@ Lehi takes his family into the wilderness by the Red Sea—They leave their prop
           </div>
 
           <div class="sticker-library-content">
-            <div class="sticker-library-list">
-  <button
-    type="button"
-    class="sticker-library-item selected"
-    data-sticker-src="stickers/arrependimento.png"
-    data-sticker-name="Arrependimento"
-  >
-    <img src="stickers/arrependimento.png" alt="Arrependimento" />
-    <span>Arrependimento</span>
-  </button>
-
-  <button
-    type="button"
-    class="sticker-library-item"
-    data-sticker-src="stickers/jesucristo.png"
-    data-sticker-name="Jesus Cristo"
-  >
-    <img src="stickers/jesucristo.png" alt="Jesus Cristo" />
-    <span>Jesus Cristo</span>
-  </button>
-
-  <button
-    type="button"
-    class="sticker-library-item"
-    data-sticker-src="stickers/templo.png"
-    data-sticker-name="Templo"
-  >
-    <img src="stickers/templo.png" alt="Templo" />
-    <span>Templo</span>
-  </button>
-
-  <button
-    type="button"
-    class="sticker-library-item"
-    data-sticker-src="stickers/escrituras.png"
-    data-sticker-name="Escrituras"
-  >
-    <img src="stickers/escrituras.png" alt="Escrituras" />
-    <span>Escrituras</span>
-  </button>
-
-  <button
-    type="button"
-    class="sticker-library-item"
-    data-sticker-src="stickers/familia-orando.png"
-    data-sticker-name="Família orando"
-  >
-    <img src="stickers/familia-orando.png" alt="Família orando" />
-    <span>Família orando</span>
-  </button>
-
-  <button
-    type="button"
-    class="sticker-library-item"
-    data-sticker-src="stickers/hombre-orando.png"
-    data-sticker-name="Homem orando"
-  >
-    <img src="stickers/hombre-orando.png" alt="Homem orando" />
-    <span>Homem orando</span>
-  </button>
-
-  <button
-    type="button"
-    class="sticker-library-item"
-    data-sticker-src="stickers/joven-orando.png"
-    data-sticker-name="Jovem orando"
-  >
-    <img src="stickers/joven-orando.png" alt="Jovem orando" />
-    <span>Jovem orando</span>
-  </button>
-
-  <button
-    type="button"
-    class="sticker-library-item"
-    data-sticker-src="stickers/criancas-orando.png"
-    data-sticker-name="Crianças orando"
-  >
-    <img src="stickers/criancas-orando.png" alt="Crianças orando" />
-    <span>Crianças orando</span>
-  </button>
-</div>
+            <div id="dynamicStickerLibraryArea" class="dynamic-sticker-library-area">
+              <div class="library-status">Carregando biblioteca...</div>
+              <div
+                class="library-principles-carousel"
+                aria-label="Princípios"
+              ></div>
+              <div
+                class="library-images-grid"
+                aria-label="Imagens do princípio selecionado"
+              ></div>
+            </div>
 
             <div class="sticker-library-preview">
               <p>Vista prévia</p>
               <img
                 id="stickerLibraryPreview"
-                src="stickers/arrependimento.png"
+                src="stickers/principios/arrependimento/arrependimento-01.png"
                 alt="Vista prévia do sticker"
               />
               <strong id="stickerLibraryName">Arrependimento</strong>

@@ -1,8 +1,17 @@
+/* =========================
+   ELEMENTOS DEL DOM
+========================= */
 const scriptureInput = document.getElementById("scriptureInput");
 const applyTextBtn = document.getElementById("applyTextBtn");
+const materialImportBtn = document.getElementById("materialImportBtn");
+const materialImportInput = document.getElementById("materialImportInput");
+const materialImportStatus = document.getElementById("materialImportStatus");
 const scriptureText = document.getElementById("scriptureText");
 const sticker = document.getElementById("sticker");
 const stickerUpload = document.getElementById("stickerUpload");
+const stickerUploadBtn = document.getElementById("stickerUploadBtn");
+const stickerCounterLabels = document.querySelectorAll("[data-sticker-counter]");
+const stickerLimitNotices = document.querySelectorAll("[data-sticker-limit-notice]");
 
 const opacityRange = document.getElementById("opacityRange");
 const opacityValue = document.getElementById("opacityValue");
@@ -47,21 +56,27 @@ const closeStickerLibraryBtn = document.getElementById("closeStickerLibraryBtn")
 const useSelectedStickerBtn = document.getElementById("useSelectedStickerBtn");
 const stickerLibraryPreview = document.getElementById("stickerLibraryPreview");
 const stickerLibraryName = document.getElementById("stickerLibraryName");
-const stickerLibraryItems = document.querySelectorAll(".sticker-library-item");
 
+/* =========================
+   CONFIGURACIÓN
+========================= */
 const AUTO_OPACITY = "30";
 const AUTO_EDGE_SOFTNESS = "6";
 const AUTO_COLOR_BOOST = "120";
+
 const STICKER_DOUBLE_TAP_DELAY = 350;
 const STICKER_DOUBLE_TAP_DISTANCE = 28;
 const STICKER_DRAG_START_DISTANCE = 6;
+
+const LIBRARY_JSON_PATH = "stickers/library.json";
+const MAX_STICKERS = 3;
+
+/* =========================
+   ESTADO
+========================= */
 let textStepDone = false;
 let stickerStepDone = false;
-let backgroundStepDone = false;
-let opacityStepDone = false;
 let sizeStepDone = false;
-let edgeStepDone = false;
-let colorStepDone = false;
 let projectStepDone = false;
 let exportStepDone = false;
 let shareStepDone = false;
@@ -69,13 +84,9 @@ let shareStepDone = false;
 let isDragging = false;
 let dragOffsetX = 0;
 let dragOffsetY = 0;
-
-let longPressTimer = null;
-let longPressStartX = 0;
-let longPressStartY = 0;
-
-let selectedLibraryStickerSrc = "stickers/arrependimento.png";
-let selectedLibraryStickerName = "Arrependimento";
+let activeSticker = sticker;
+let stickerCounter = 0;
+let stickerLimitNoticeTimer = null;
 
 let stickerLocked = false;
 let lastStickerTapTime = 0;
@@ -84,6 +95,21 @@ let lastStickerTapY = 0;
 let activeStickerPointerId = null;
 let pendingUnlockedPointer = null;
 let pendingUnlockedPointerId = null;
+
+let longPressTimer = null;
+let longPressStartX = 0;
+let longPressStartY = 0;
+
+let stickerLibraryData = [];
+let selectedLibraryPrincipleId = null;
+let selectedLibraryImageId = null;
+let selectedLibraryStickerSrc = "";
+let selectedLibraryStickerName = "Sticker";
+
+let libraryCarouselEl = null;
+let libraryImagesEl = null;
+let libraryStatusEl = null;
+
 const mobilePanelTitles = {
   text: "Texto",
   sticker: "Sticker",
@@ -91,6 +117,9 @@ const mobilePanelTitles = {
   actions: "Ações"
 };
 
+/* =========================
+   UTILIDADES
+========================= */
 function isMobileView() {
   return window.matchMedia("(max-width: 850px)").matches;
 }
@@ -102,12 +131,216 @@ function clearGuideGlow() {
 }
 
 function hideSticker() {
-  sticker.style.display = "none";
-  sticker.classList.remove("selected");
+  if (!sticker) return;
+  getStickerElements().forEach((item) => {
+    item.style.display = "none";
+    item.classList.remove("selected");
+  });
+  updateStickerCounter();
 }
 
 function showSticker() {
-  sticker.style.display = "block";
+  if (!sticker) return;
+  getStickerElements().forEach((item) => {
+    item.style.display = "block";
+  });
+}
+
+function getStickerElements() {
+  return Array.from(captureArea.querySelectorAll(".sticker"));
+}
+
+function getActiveSticker() {
+  if (activeSticker && captureArea.contains(activeSticker)) {
+    return activeSticker;
+  }
+
+  const stickers = getStickerElements();
+  activeSticker = stickers[0] || sticker;
+  return activeSticker;
+}
+
+function setupStickerElement(stickerElement) {
+  stickerElement.setAttribute("draggable", "false");
+  stickerElement.style.touchAction = "none";
+  stickerElement.style.userSelect = "none";
+  stickerElement.style.webkitUserDrag = "none";
+
+  if (stickerElement.dataset.ready === "true") return;
+
+  stickerElement.dataset.ready = "true";
+  stickerElement.addEventListener("pointerdown", startDrag, { passive: false });
+  stickerElement.addEventListener("dragstart", (event) => {
+    event.preventDefault();
+  });
+  stickerElement.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+  });
+}
+
+function syncControlsFromActiveSticker() {
+  const currentSticker = getActiveSticker();
+  if (!currentSticker) return;
+  const width = parseInt(currentSticker.style.width, 10) || 210;
+  const opacity = Math.round((Number(currentSticker.style.opacity || 0.3)) * 100);
+  sizeRange.value = String(width);
+  sizeValue.textContent = width + " px";
+  opacityRange.value = String(opacity);
+  opacityValue.textContent = opacity + "%";
+}
+
+function selectActiveSticker(stickerElement) {
+  if (!stickerElement) return;
+  getStickerElements().forEach((item) => {
+    item.classList.toggle("selected", item === stickerElement);
+  });
+  activeSticker = stickerElement;
+  stickerLocked = stickerElement.dataset.locked === "true";
+  syncControlsFromActiveSticker();
+}
+
+function createStickerElement() {
+  stickerCounter += 1;
+  const stickerElement = sticker.cloneNode(false);
+  stickerElement.id = "sticker-" + (stickerCounter + 1);
+  stickerElement.classList.remove("selected", "center-flash");
+  stickerElement.dataset.locked = "false";
+  stickerElement.dataset.ready = "";
+  captureArea.appendChild(stickerElement);
+  setupStickerElement(stickerElement);
+  return stickerElement;
+}
+
+function getVisibleStickerCount() {
+  return getStickerElements().filter((item) => {
+    return item.style.display !== "none" && (item.getAttribute("src") || item.src);
+  }).length;
+}
+
+function updateStickerCounter() {
+  const counterText = `Stickers ${getVisibleStickerCount()}/${MAX_STICKERS}`;
+
+  stickerCounterLabels.forEach((counterLabel) => {
+    counterLabel.textContent = counterText;
+  });
+}
+
+function showStickerLimitNotice() {
+  if (!stickerLimitNotices.length) return;
+
+  window.clearTimeout(stickerLimitNoticeTimer);
+
+  stickerLimitNotices.forEach((notice) => {
+    notice.classList.remove("is-visible");
+    notice.setAttribute("aria-hidden", "false");
+  });
+
+  window.requestAnimationFrame(() => {
+    stickerLimitNotices.forEach((notice) => {
+      notice.classList.add("is-visible");
+    });
+  });
+
+  stickerLimitNoticeTimer = window.setTimeout(() => {
+    stickerLimitNotices.forEach((notice) => {
+      notice.classList.remove("is-visible");
+      notice.setAttribute("aria-hidden", "true");
+    });
+  }, 2400);
+}
+
+function canAddSticker() {
+  return getVisibleStickerCount() < MAX_STICKERS;
+}
+
+function getAvailableStickerSlot() {
+  if (!canAddSticker()) {
+    showStickerLimitNotice();
+    updateStickerCounter();
+    return null;
+  }
+
+  const stickers = getStickerElements();
+  const emptySticker = stickers.find((item) => item.style.display === "none" || (!item.getAttribute("src") && !item.src));
+  if (emptySticker) return emptySticker;
+
+  if (stickers.length < MAX_STICKERS) {
+    return createStickerElement();
+  }
+
+  showStickerLimitNotice();
+  updateStickerCounter();
+  return null;
+}
+
+function placeStickerImage(src, alt = "Sticker digital") {
+  const targetSticker = getAvailableStickerSlot();
+
+  if (!targetSticker) {
+    updateStickerCounter();
+    return false;
+  }
+
+  targetSticker.src = src;
+  targetSticker.alt = alt;
+  targetSticker.style.display = "block";
+  targetSticker.dataset.locked = "false";
+  selectActiveSticker(targetSticker);
+  centerSticker();
+  applyAutomaticStickerSettings();
+  stickerStepDone = true;
+  stickerLocked = false;
+  sizeStepDone = false;
+  projectStepDone = false;
+  exportStepDone = false;
+  shareStepDone = false;
+  updateStickerCounter();
+
+  if (getVisibleStickerCount() >= MAX_STICKERS) {
+    showStickerLimitNotice();
+  }
+
+  return true;
+}
+
+function removeExtraStickers() {
+  getStickerElements().forEach((item) => {
+    if (item !== sticker) item.remove();
+  });
+  activeSticker = sticker;
+  updateStickerCounter();
+}
+
+function serializeSticker(stickerElement) {
+  return {
+    src: stickerElement.getAttribute("src") || stickerElement.src || "",
+    alt: stickerElement.alt || "Sticker digital",
+    left: stickerElement.style.left,
+    top: stickerElement.style.top,
+    width: stickerElement.style.width,
+    opacity: stickerElement.style.opacity,
+    filter: stickerElement.style.filter,
+    maskImage: stickerElement.style.maskImage,
+    webkitMaskImage: stickerElement.style.webkitMaskImage,
+    locked: stickerElement.dataset.locked === "true"
+  };
+}
+
+function applySerializedSticker(stickerData, index) {
+  const stickerElement = index === 0 ? sticker : createStickerElement();
+  stickerElement.src = stickerData.src;
+  stickerElement.alt = stickerData.alt || "Sticker digital";
+  stickerElement.style.left = stickerData.left || "110px";
+  stickerElement.style.top = stickerData.top || "330px";
+  stickerElement.style.width = stickerData.width || "210px";
+  stickerElement.style.opacity = stickerData.opacity || "0.30";
+  stickerElement.style.filter = stickerData.filter || "";
+  stickerElement.style.maskImage = stickerData.maskImage || "";
+  stickerElement.style.webkitMaskImage = stickerData.webkitMaskImage || "";
+  stickerElement.dataset.locked = stickerData.locked ? "true" : "false";
+  stickerElement.style.display = "block";
+  setupStickerElement(stickerElement);
+  return stickerElement;
 }
 
 function updateStartGlow() {
@@ -144,7 +377,6 @@ function updateGuideGlow() {
     } else {
       stickerUpload.classList.add("guided-glow");
     }
-
     return;
   }
 
@@ -161,19 +393,112 @@ function updateGuideGlow() {
 function resetWorkflowAfterTextChange() {
   stickerStepDone = false;
   stickerLocked = false;
-  backgroundStepDone = false;
-  opacityStepDone = false;
   sizeStepDone = false;
-  edgeStepDone = false;
-  colorStepDone = false;
   projectStepDone = false;
   exportStepDone = false;
   shareStepDone = false;
 }
 
+function getSafeProjectFileName() {
+  const typedName = projectNameInput.value.trim();
+
+  if (!typedName) return "scripture-sticker";
+
+  const safeName = typedName
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return safeName || "scripture-sticker";
+}
+
+function setMaterialImportStatus(message = "", type = "") {
+  if (!materialImportStatus) return;
+
+  materialImportStatus.textContent = message;
+  materialImportStatus.classList.remove("success", "warning", "error");
+
+  if (type) {
+    materialImportStatus.classList.add(type);
+  }
+}
+
+function getFileExtension(fileName = "") {
+  const dotIndex = fileName.lastIndexOf(".");
+
+  if (dotIndex === -1) return "";
+
+  return fileName.slice(dotIndex + 1).toLowerCase();
+}
+
+function markImportedTextAsUnsaved() {
+  textStepDone = false;
+  projectStepDone = false;
+  exportStepDone = false;
+  shareStepDone = false;
+  updateGuideGlow();
+}
+
+function readTextMaterial(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      resolve(event.target.result || "");
+    };
+
+    reader.onerror = () => {
+      reject(reader.error || new Error("Erro ao ler arquivo"));
+    };
+
+    reader.readAsText(file, "UTF-8");
+  });
+}
+
+async function importMaterialFile(event) {
+  const file = event.target.files[0];
+
+  if (!file) return;
+
+  try {
+    const extension = getFileExtension(file.name);
+
+    if (extension === "txt") {
+      const importedText = await readTextMaterial(file);
+
+      scriptureInput.value = importedText;
+      markImportedTextAsUnsaved();
+      setMaterialImportStatus("Material importado com sucesso.", "success");
+      return;
+    }
+
+    if (extension === "docx" || extension === "pdf") {
+      setMaterialImportStatus(
+        "Formato ainda não compatível nesta versão.",
+        "warning"
+      );
+      return;
+    }
+
+    setMaterialImportStatus(
+      "Formato ainda não compatível nesta versão.",
+      "warning"
+    );
+  } catch (error) {
+    console.error(error);
+    setMaterialImportStatus("Não foi possível importar o material.", "error");
+  } finally {
+    materialImportInput.value = "";
+  }
+}
+
+/* =========================
+   TEXTO
+========================= */
 function applyText() {
   const text = scriptureInput.value.trim();
-
   scriptureText.textContent = text;
 
   if (text.length > 0) {
@@ -190,14 +515,16 @@ function applyText() {
   updateGuideGlow();
 }
 
+/* =========================
+   AJUSTES VISUALES
+========================= */
 function updateOpacity(markStep = true) {
   const value = Number(opacityRange.value);
 
-  sticker.style.opacity = value / 100;
+  getActiveSticker().style.opacity = value / 100;
   opacityValue.textContent = `${value}%`;
 
   if (markStep) {
-    opacityStepDone = true;
     projectStepDone = false;
     exportStepDone = false;
     shareStepDone = false;
@@ -208,7 +535,7 @@ function updateOpacity(markStep = true) {
 function updateSize(markStep = true) {
   const value = Number(sizeRange.value);
 
-  sticker.style.width = `${value}px`;
+  getActiveSticker().style.width = `${value}px`;
   sizeValue.textContent = `${value} px`;
 
   if (markStep) {
@@ -232,7 +559,6 @@ function applyBackground(markStep = false) {
   captureArea.classList.add(`bg-${backgroundSelect.value}`);
 
   if (markStep) {
-    backgroundStepDone = true;
     projectStepDone = false;
     exportStepDone = false;
     shareStepDone = false;
@@ -240,14 +566,14 @@ function applyBackground(markStep = false) {
   }
 }
 
-function updateStickerEffects(markEdgeStep = false, markColorStep = false) {
+function updateStickerEffects(markStep = false) {
   const edge = Number(edgeSoftnessRange.value);
   const colorBoost = Number(colorBoostRange.value);
 
   edgeSoftnessValue.textContent = `${edge} px`;
   colorBoostValue.textContent = `${colorBoost}%`;
 
-  sticker.style.filter = `saturate(${colorBoost}%) contrast(105%)`;
+  getActiveSticker().style.filter = `saturate(${colorBoost}%) contrast(105%)`;
 
   if (edge > 0) {
     const mask = `
@@ -255,25 +581,22 @@ function updateStickerEffects(markEdgeStep = false, markColorStep = false) {
       linear-gradient(to bottom, transparent 0px, black ${edge}px, black calc(100% - ${edge}px), transparent 100%)
     `;
 
-    sticker.style.webkitMaskImage = mask;
-    sticker.style.maskImage = mask;
-    sticker.style.webkitMaskSize = "100% 100%";
-    sticker.style.maskSize = "100% 100%";
-    sticker.style.webkitMaskRepeat = "no-repeat";
-    sticker.style.maskRepeat = "no-repeat";
-    sticker.style.webkitMaskComposite = "source-in";
-    sticker.style.maskComposite = "intersect";
+    getActiveSticker().style.webkitMaskImage = mask;
+    getActiveSticker().style.maskImage = mask;
+    getActiveSticker().style.webkitMaskSize = "100% 100%";
+    getActiveSticker().style.maskSize = "100% 100%";
+    getActiveSticker().style.webkitMaskRepeat = "no-repeat";
+    getActiveSticker().style.maskRepeat = "no-repeat";
+    getActiveSticker().style.webkitMaskComposite = "source-in";
+    getActiveSticker().style.maskComposite = "intersect";
   } else {
-    sticker.style.webkitMaskImage = "none";
-    sticker.style.maskImage = "none";
-    sticker.style.webkitMaskComposite = "";
-    sticker.style.maskComposite = "";
+    getActiveSticker().style.webkitMaskImage = "none";
+    getActiveSticker().style.maskImage = "none";
+    getActiveSticker().style.webkitMaskComposite = "";
+    getActiveSticker().style.maskComposite = "";
   }
 
-  if (markEdgeStep) edgeStepDone = true;
-  if (markColorStep) colorStepDone = true;
-
-  if (markEdgeStep || markColorStep) {
+  if (markStep) {
     projectStepDone = false;
     exportStepDone = false;
     shareStepDone = false;
@@ -287,35 +610,36 @@ function applyAutomaticStickerSettings() {
   colorBoostRange.value = AUTO_COLOR_BOOST;
 
   updateOpacity(false);
-  updateStickerEffects(false, false);
-
-  opacityStepDone = true;
-  edgeStepDone = true;
-  colorStepDone = true;
+  updateStickerEffects(false);
 }
 
+/* =========================
+   POSICIÓN
+========================= */
 function centerSticker() {
   const pageRect = captureArea.getBoundingClientRect();
-  const stickerWidth = sticker.offsetWidth || Number(sizeRange.value);
+  const currentSticker = getActiveSticker();
+  const stickerWidth = currentSticker.offsetWidth || Number(sizeRange.value);
 
-  sticker.style.left = `${(pageRect.width - stickerWidth) / 2}px`;
-  sticker.style.top = `${pageRect.height * 0.48}px`;
+  currentSticker.style.left = `${(pageRect.width - stickerWidth) / 2}px`;
+  currentSticker.style.top = `${pageRect.height * 0.48}px`;
 }
 
 function flashCenteredSticker() {
-  sticker.classList.add("center-flash");
+  getActiveSticker().classList.add("center-flash");
 
   setTimeout(() => {
-    sticker.classList.remove("center-flash");
+    getActiveSticker().classList.remove("center-flash");
   }, 650);
 }
 
+/* =========================
+   MOVER / FIJAR / LIBERAR STICKER
+========================= */
 function getPointerPosition(event) {
-  const point = event.touches ? event.touches[0] : event;
-
   return {
-    x: point.clientX,
-    y: point.clientY
+    x: event.clientX,
+    y: event.clientY
   };
 }
 
@@ -330,22 +654,20 @@ function isSameStickerPointer(event) {
 function captureStickerPointer(event) {
   activeStickerPointerId = event.pointerId ?? null;
 
-  if (event.pointerId !== undefined && sticker.setPointerCapture) {
+  const currentSticker = getActiveSticker();
+  if (event.pointerId !== undefined && currentSticker.setPointerCapture) {
     try {
-      sticker.setPointerCapture(event.pointerId);
-    } catch (error) {
-      // Alguns navegadores podem falhar se o ponteiro já foi liberado.
-    }
+      currentSticker.setPointerCapture(event.pointerId);
+    } catch (error) {}
   }
 }
 
 function releaseStickerPointer(event) {
-  if (event && event.pointerId !== undefined && sticker.releasePointerCapture) {
+  const currentSticker = getActiveSticker();
+  if (event && event.pointerId !== undefined && currentSticker.releasePointerCapture) {
     try {
-      sticker.releasePointerCapture(event.pointerId);
-    } catch (error) {
-      // Ignora quando o navegador já liberou o ponteiro.
-    }
+      currentSticker.releasePointerCapture(event.pointerId);
+    } catch (error) {}
   }
 
   activeStickerPointerId = null;
@@ -373,12 +695,11 @@ function isStickerDoubleTap(pointer) {
   lastStickerTapX = pointer.x;
   lastStickerTapY = pointer.y;
 
-  if (isDoubleTap) {
-    resetStickerDoubleTapState();
-  }
+  if (isDoubleTap) resetStickerDoubleTapState();
 
   return isDoubleTap;
 }
+
 function samePendingUnlockPointer(event) {
   return (
     pendingUnlockedPointerId === null ||
@@ -403,7 +724,6 @@ function handleUnlockedSecondTapMove(event) {
   event.stopPropagation();
 
   const pointer = getPointerPosition(event);
-
   const moveX = Math.abs(pointer.x - pendingUnlockedPointer.x);
   const moveY = Math.abs(pointer.y - pendingUnlockedPointer.y);
 
@@ -433,12 +753,14 @@ function finishStickerUnlockTap(event) {
   releaseStickerPointer(event);
 
   stickerLocked = false;
-  sticker.classList.add("selected");
+  getActiveSticker().classList.add("selected");
 }
-function beginStickerDrag(pointer) {
-  sticker.classList.add("selected");
 
-  const stickerRect = sticker.getBoundingClientRect();
+function beginStickerDrag(pointer) {
+  const currentSticker = getActiveSticker();
+  currentSticker.classList.add("selected");
+
+  const stickerRect = currentSticker.getBoundingClientRect();
 
   isDragging = true;
   dragOffsetX = pointer.x - stickerRect.left;
@@ -450,11 +772,11 @@ function beginStickerDrag(pointer) {
 }
 
 function startDrag(event) {
+  selectActiveSticker(event.currentTarget);
   if (!stickerStepDone) return;
 
   event.preventDefault();
   event.stopPropagation();
-  clearPendingStickerUnlockEvents();
 
   const pointer = getPointerPosition(event);
 
@@ -462,8 +784,19 @@ function startDrag(event) {
     if (!isStickerDoubleTap(pointer)) return;
 
     stickerLocked = false;
+    getActiveSticker().classList.add("selected");
+
     captureStickerPointer(event);
-    beginStickerDrag(pointer);
+
+    pendingUnlockedPointer = pointer;
+    pendingUnlockedPointerId = event.pointerId ?? null;
+
+    window.addEventListener("pointermove", handleUnlockedSecondTapMove, {
+      passive: false
+    });
+    window.addEventListener("pointerup", finishStickerUnlockTap);
+    window.addEventListener("pointercancel", finishStickerUnlockTap);
+
     return;
   }
 
@@ -484,14 +817,15 @@ function drag(event) {
   let newLeft = pointer.x - pageRect.left - dragOffsetX;
   let newTop = pointer.y - pageRect.top - dragOffsetY;
 
-  const maxLeft = captureArea.clientWidth - sticker.offsetWidth;
-  const maxTop = captureArea.clientHeight - sticker.offsetHeight;
+  const currentSticker = getActiveSticker();
+  const maxLeft = captureArea.clientWidth - currentSticker.offsetWidth;
+  const maxTop = captureArea.clientHeight - currentSticker.offsetHeight;
 
   newLeft = Math.max(0, Math.min(newLeft, maxLeft));
   newTop = Math.max(0, Math.min(newTop, maxTop));
 
-  sticker.style.left = `${newLeft}px`;
-  sticker.style.top = `${newTop}px`;
+  currentSticker.style.left = `${newLeft}px`;
+  currentSticker.style.top = `${newTop}px`;
 
   projectStepDone = false;
   exportStepDone = false;
@@ -506,9 +840,12 @@ function stopDrag(event) {
     event.stopPropagation();
   }
 
+  clearPendingStickerUnlockEvents();
+
   isDragging = false;
   stickerLocked = true;
-  sticker.classList.remove("selected");
+  getActiveSticker().dataset.locked = "true";
+  getActiveSticker().classList.remove("selected");
 
   window.removeEventListener("pointermove", drag);
   window.removeEventListener("pointerup", stopDrag);
@@ -520,32 +857,24 @@ function stopDrag(event) {
   updateGuideGlow();
 }
 
-function getSafeProjectFileName() {
-  const typedName = projectNameInput.value.trim();
-
-  if (!typedName) {
-    return "scripture-sticker";
-  }
-
-  const safeName = typedName
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-  return safeName || "scripture-sticker";
-}
-
+/* =========================
+   PROYECTOS
+========================= */
 function getProjectData() {
+  const stickers = getStickerElements()
+    .filter((item) => item.style.display !== "none" && (item.getAttribute("src") || item.src))
+    .slice(0, MAX_STICKERS)
+    .map(serializeSticker);
+
   return {
     projectName: projectNameInput.value.trim(),
     text: scriptureInput.value,
-    stickerSrc: stickerStepDone ? sticker.getAttribute("src") || sticker.src : "",
-    stickerLeft: sticker.style.left,
-    stickerTop: sticker.style.top,
-    stickerWidth: sticker.style.width,
-    stickerOpacity: sticker.style.opacity,
+    stickers,
+    stickerSrc: stickers[0] ? stickers[0].src : "",
+    stickerLeft: stickers[0] ? stickers[0].left : "",
+    stickerTop: stickers[0] ? stickers[0].top : "",
+    stickerWidth: stickers[0] ? stickers[0].width : "",
+    stickerOpacity: stickers[0] ? stickers[0].opacity : "",
     opacityRangeValue: opacityRange.value,
     sizeRangeValue: sizeRange.value,
     backgroundValue: backgroundSelect.value,
@@ -559,22 +888,35 @@ function applyProjectData(projectData, markAsSaved = true) {
   scriptureInput.value = projectData.text || "";
   scriptureText.textContent = projectData.text || "";
 
-  if (projectData.stickerSrc) {
-    sticker.src = projectData.stickerSrc;
-    showSticker();
+  removeExtraStickers();
+  sticker.removeAttribute("src");
+  hideSticker();
+
+  const projectStickers = Array.isArray(projectData.stickers)
+    ? projectData.stickers.slice(0, MAX_STICKERS)
+    : projectData.stickerSrc
+      ? [{
+          src: projectData.stickerSrc,
+          left: projectData.stickerLeft,
+          top: projectData.stickerTop,
+          width: projectData.stickerWidth,
+          opacity: projectData.stickerOpacity,
+          locked: true
+        }]
+      : [];
+
+  const restoredStickers = projectStickers
+    .filter((item) => item && item.src)
+    .map((item, index) => applySerializedSticker(item, index));
+
+  if (restoredStickers.length > 0) {
+    selectActiveSticker(restoredStickers[0]);
     stickerStepDone = true;
-    stickerLocked = true;
+    stickerLocked = restoredStickers[0].dataset.locked === "true";
   } else {
-    sticker.removeAttribute("src");
-    hideSticker();
     stickerStepDone = false;
     stickerLocked = false;
   }
-
-  sticker.style.left = projectData.stickerLeft || "110px";
-  sticker.style.top = projectData.stickerTop || "330px";
-  sticker.style.width = projectData.stickerWidth || "210px";
-  sticker.style.opacity = projectData.stickerOpacity || "0.30";
 
   opacityRange.value = projectData.opacityRangeValue || AUTO_OPACITY;
   sizeRange.value = projectData.sizeRangeValue || "210";
@@ -582,21 +924,16 @@ function applyProjectData(projectData, markAsSaved = true) {
   edgeSoftnessRange.value = projectData.edgeSoftnessValue || AUTO_EDGE_SOFTNESS;
   colorBoostRange.value = projectData.colorBoostValue || AUTO_COLOR_BOOST;
 
-  updateOpacity(false);
-  updateSize(false);
+  syncControlsFromActiveSticker();
   applyBackground(false);
-  updateStickerEffects(false, false);
 
   textStepDone = scriptureInput.value.trim().length > 0;
-  backgroundStepDone = true;
-  opacityStepDone = true;
   sizeStepDone = true;
-  edgeStepDone = true;
-  colorStepDone = true;
   projectStepDone = markAsSaved;
   exportStepDone = false;
   shareStepDone = false;
 
+  updateStickerCounter();
   updateGuideGlow();
 }
 
@@ -609,6 +946,38 @@ function saveProject() {
   updateGuideGlow();
 
   alert("Projeto guardado neste navegador.");
+}
+
+function loadProject(showAlert = true) {
+  const savedProject = localStorage.getItem("scriptureStickersProject");
+
+  if (!savedProject) {
+    if (showAlert) {
+      alert("Nenhum projeto guardado foi encontrado neste navegador.");
+    }
+
+    return false;
+  }
+
+  try {
+    const projectData = JSON.parse(savedProject);
+
+    applyProjectData(projectData, true);
+
+    if (showAlert) {
+      alert("Projeto aberto.");
+    }
+
+    return true;
+  } catch (error) {
+    console.error(error);
+
+    if (showAlert) {
+      alert("O projeto guardado está corrompido ou não pode ser aberto.");
+    }
+
+    return false;
+  }
 }
 
 function exportProjectFile() {
@@ -671,7 +1040,9 @@ function newProject() {
   scriptureInput.value = "";
   scriptureText.textContent = "";
   stickerUpload.value = "";
+  setMaterialImportStatus();
 
+  removeExtraStickers();
   sticker.removeAttribute("src");
   hideSticker();
 
@@ -684,77 +1055,45 @@ function newProject() {
   updateOpacity(false);
   updateSize(false);
   applyBackground(false);
-  updateStickerEffects(false, false);
+  updateStickerEffects(false);
   centerSticker();
 
   textStepDone = false;
   stickerStepDone = false;
   stickerLocked = false;
-  backgroundStepDone = false;
-  opacityStepDone = false;
   sizeStepDone = false;
-  edgeStepDone = false;
-  colorStepDone = false;
   projectStepDone = false;
   exportStepDone = false;
   shareStepDone = false;
 
   closeAllFloatingPanels();
   closeStickerLibrary();
+  updateStickerCounter();
   updateGuideGlow();
 }
-
-function loadProject(showAlert = true) {
-  const savedProject = localStorage.getItem("scriptureStickersProject");
-
-  if (!savedProject) {
-    if (showAlert) {
-      alert("Nenhum projeto guardado foi encontrado neste navegador.");
-    }
-
-    return false;
-  }
-
-  try {
-    const projectData = JSON.parse(savedProject);
-
-    applyProjectData(projectData, true);
-
-    if (showAlert) {
-      alert("Projeto aberto.");
-    }
-
-    return true;
-  } catch (error) {
-    console.error(error);
-
-    if (showAlert) {
-      alert("O projeto guardado está corrompido ou não pode ser aberto.");
-    }
-
-    return false;
-  }
-}
-
 function loadStickerFromFile(event) {
   const file = event.target.files[0];
 
   if (!file) return;
 
+  if (!canAddSticker()) {
+    showStickerLimitNotice();
+    updateStickerCounter();
+    stickerUpload.value = "";
+    return;
+  }
+
   const reader = new FileReader();
 
   reader.onload = function (loadEvent) {
-    sticker.src = loadEvent.target.result;
-    showSticker();
-    centerSticker();
-    applyAutomaticStickerSettings();
+    const stickerWasPlaced = placeStickerImage(
+      loadEvent.target.result,
+      file.name || "Sticker digital"
+    );
 
-    stickerStepDone = true;
-    stickerLocked = false;
-    sizeStepDone = false;
-    projectStepDone = false;
-    exportStepDone = false;
-    shareStepDone = false;
+    stickerUpload.value = "";
+
+    if (!stickerWasPlaced) return;
 
     closeMobileDrawer();
     closeAdvancedSubmenu();
@@ -762,6 +1101,449 @@ function loadStickerFromFile(event) {
   };
 
   reader.readAsDataURL(file);
+}
+
+/* =========================
+   BIBLIOTECA DINÁMICA
+========================= */
+let libraryCarouselListEl = null;
+let libraryCarouselIsMoving = false;
+
+function normalizeLibraryData(data) {
+  if (!Array.isArray(data)) return [];
+
+  return data
+    .filter((principle) => {
+      return (
+        principle &&
+        typeof principle.id === "string" &&
+        typeof principle.name === "string" &&
+        Array.isArray(principle.images)
+      );
+    })
+    .map((principle) => {
+      return {
+        id: principle.id,
+        name: principle.name,
+        folder: principle.folder || "",
+        images: principle.images
+          .filter((image) => image && typeof image.src === "string")
+          .map((image) => {
+            return {
+              id: image.id || image.src,
+              name: image.name || principle.name,
+              src: image.src
+            };
+          })
+      };
+    })
+    .filter((principle) => principle.images.length > 0);
+}
+
+async function loadStickerLibraryJson() {
+  try {
+    const response = await fetch(LIBRARY_JSON_PATH, { cache: "no-store" });
+
+    if (!response.ok) {
+      throw new Error(`Erro ao carregar ${LIBRARY_JSON_PATH}`);
+    }
+
+    const data = await response.json();
+    stickerLibraryData = normalizeLibraryData(data);
+  } catch (error) {
+    console.error(error);
+    stickerLibraryData = [];
+  }
+}
+
+function getFirstImageFromPrinciple(principle) {
+  if (!principle || !principle.images || principle.images.length === 0) {
+    return null;
+  }
+
+  return principle.images[0];
+}
+
+function setSelectedPrincipleFirstImage(principle) {
+  const firstImage = getFirstImageFromPrinciple(principle);
+
+  if (!firstImage) return;
+
+  selectedLibraryPrincipleId = principle.id;
+  selectedLibraryImageId = firstImage.id;
+  selectedLibraryStickerSrc = firstImage.src;
+  selectedLibraryStickerName = firstImage.name;
+}
+
+function hideLibraryImages() {
+  if (!libraryImagesEl) return;
+
+  libraryImagesEl.innerHTML = "";
+  libraryImagesEl.classList.remove("visible");
+  libraryImagesEl.hidden = true;
+}
+
+function showLibraryImages(principle) {
+  if (!libraryImagesEl || !principle) return;
+
+  renderLibraryImages(principle);
+  libraryImagesEl.hidden = false;
+  libraryImagesEl.classList.add("visible");
+}
+
+function ensureLibraryDynamicLayout() {
+  if (!stickerLibraryModal) return;
+
+  document.querySelectorAll(".sticker-library-item").forEach((item) => {
+    item.remove();
+  });
+
+  let dynamicArea = document.getElementById("dynamicStickerLibraryArea");
+
+  if (!dynamicArea) {
+    dynamicArea = document.createElement("div");
+    dynamicArea.id = "dynamicStickerLibraryArea";
+    dynamicArea.className = "dynamic-sticker-library-area";
+
+    const buttonParent = useSelectedStickerBtn
+      ? useSelectedStickerBtn.parentElement
+      : null;
+
+    if (buttonParent && buttonParent.parentElement) {
+      buttonParent.parentElement.insertBefore(dynamicArea, buttonParent);
+    } else {
+      stickerLibraryModal.appendChild(dynamicArea);
+    }
+  }
+
+  dynamicArea.innerHTML = "";
+
+  libraryStatusEl = document.createElement("div");
+  libraryStatusEl.className = "library-status";
+
+  libraryCarouselEl = document.createElement("div");
+  libraryCarouselEl.className = "library-principles-carousel";
+  libraryCarouselEl.setAttribute("aria-label", "Princípios");
+
+  libraryImagesEl = document.createElement("div");
+  libraryImagesEl.className = "library-images-grid";
+  libraryImagesEl.setAttribute("aria-label", "Imagens do princípio selecionado");
+  libraryImagesEl.hidden = true;
+
+  dynamicArea.appendChild(libraryStatusEl);
+  dynamicArea.appendChild(libraryCarouselEl);
+  dynamicArea.appendChild(libraryImagesEl);
+}
+
+function getRotatedPrinciplesForCarousel(activePrincipleId) {
+  if (!stickerLibraryData.length) return [];
+
+  let activeIndex = stickerLibraryData.findIndex((principle) => {
+    return principle.id === activePrincipleId;
+  });
+
+  if (activeIndex === -1) {
+    activeIndex = 0;
+  }
+
+  const startIndex =
+    (activeIndex - 2 + stickerLibraryData.length) % stickerLibraryData.length;
+
+  const rotated = [];
+
+  for (let index = 0; index < stickerLibraryData.length; index += 1) {
+    const realIndex = (startIndex + index) % stickerLibraryData.length;
+    rotated.push(stickerLibraryData[realIndex]);
+  }
+
+  return rotated;
+}
+
+function syncActivePrincipleFromCarousel() {
+  if (!libraryCarouselListEl) return;
+
+  const cards = Array.from(
+    libraryCarouselListEl.querySelectorAll(".principle-carousel-card")
+  );
+
+  cards.forEach((card) => {
+    card.classList.remove("active");
+  });
+
+  const activeCard = cards[2];
+
+  if (!activeCard) return;
+
+  activeCard.classList.add("active");
+
+  const principleId = activeCard.dataset.principleId;
+  const principle = stickerLibraryData.find((item) => item.id === principleId);
+
+  if (!principle) return;
+
+  setSelectedPrincipleFirstImage(principle);
+  updateLibraryPreview();
+}
+
+function renderLibraryPrinciples() {
+  if (!libraryCarouselEl) return;
+
+  libraryCarouselEl.innerHTML = "";
+
+  if (stickerLibraryData.length === 0) {
+    if (libraryStatusEl) {
+      libraryStatusEl.textContent = "Nenhum sticker encontrado.";
+    }
+    return;
+  }
+
+  if (!selectedLibraryPrincipleId) {
+    selectedLibraryPrincipleId = stickerLibraryData[0].id;
+  }
+
+  if (libraryStatusEl) {
+    libraryStatusEl.textContent =
+      "Use as setas para escolher. Toque na imagem principal para ver variações.";
+  }
+
+  const carouselWrap = document.createElement("div");
+  carouselWrap.className = "principle-diagonal-carousel";
+
+  const prevBtn = document.createElement("button");
+  prevBtn.type = "button";
+  prevBtn.className = "principle-carousel-arrow principle-carousel-prev";
+  prevBtn.textContent = "‹";
+  prevBtn.setAttribute("aria-label", "Princípio anterior");
+
+  const nextBtn = document.createElement("button");
+  nextBtn.type = "button";
+  nextBtn.className = "principle-carousel-arrow principle-carousel-next";
+  nextBtn.textContent = "›";
+  nextBtn.setAttribute("aria-label", "Próximo princípio");
+
+  const stage = document.createElement("div");
+  stage.className = "principle-carousel-stage";
+
+  libraryCarouselListEl = document.createElement("div");
+  libraryCarouselListEl.className = "principle-carousel-list";
+
+  const rotatedPrinciples = getRotatedPrinciplesForCarousel(
+    selectedLibraryPrincipleId
+  );
+
+  rotatedPrinciples.forEach((principle) => {
+    const firstImage = getFirstImageFromPrinciple(principle);
+
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "principle-carousel-card";
+    card.dataset.principleId = principle.id;
+
+    const img = document.createElement("img");
+    img.src = firstImage ? firstImage.src : "";
+    img.alt = principle.name;
+    img.loading = "lazy";
+    img.draggable = false;
+
+    const label = document.createElement("span");
+    label.textContent = principle.name;
+
+    card.appendChild(img);
+    card.appendChild(label);
+
+    card.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const cards = Array.from(
+        libraryCarouselListEl.querySelectorAll(".principle-carousel-card")
+      );
+
+      const cardIndex = cards.indexOf(card);
+
+      if (cardIndex === 2) {
+        showLibraryImages(principle);
+        return;
+      }
+
+      selectLibraryPrinciple(principle.id, {
+        showImages: false
+      });
+    });
+
+    libraryCarouselListEl.appendChild(card);
+  });
+
+  prevBtn.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    moveLibraryPrinciple("previous");
+  });
+
+  nextBtn.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    moveLibraryPrinciple("next");
+  });
+
+  stage.appendChild(libraryCarouselListEl);
+
+  carouselWrap.appendChild(prevBtn);
+  carouselWrap.appendChild(stage);
+  carouselWrap.appendChild(nextBtn);
+
+  libraryCarouselEl.appendChild(carouselWrap);
+
+  syncActivePrincipleFromCarousel();
+}
+
+function moveLibraryPrinciple(direction) {
+  if (!libraryCarouselListEl || libraryCarouselIsMoving) return;
+
+  const cards = libraryCarouselListEl.querySelectorAll(".principle-carousel-card");
+
+  if (cards.length <= 1) return;
+
+  libraryCarouselIsMoving = true;
+  hideLibraryImages();
+
+  libraryCarouselListEl.classList.remove("next", "previous");
+
+  if (direction === "next") {
+    const lastCard = libraryCarouselListEl.lastElementChild;
+
+    if (lastCard) {
+      libraryCarouselListEl.prepend(lastCard);
+    }
+
+    libraryCarouselListEl.classList.add("next");
+  }
+
+  if (direction === "previous") {
+    const firstCard = libraryCarouselListEl.firstElementChild;
+
+    if (firstCard) {
+      libraryCarouselListEl.appendChild(firstCard);
+    }
+
+    libraryCarouselListEl.classList.add("previous");
+  }
+
+  syncActivePrincipleFromCarousel();
+
+  window.setTimeout(() => {
+    if (libraryCarouselListEl) {
+      libraryCarouselListEl.classList.remove("next", "previous");
+    }
+
+    libraryCarouselIsMoving = false;
+  }, 460);
+}
+
+function renderLibraryImages(principle) {
+  if (!libraryImagesEl) return;
+
+  libraryImagesEl.innerHTML = "";
+
+  if (!principle) return;
+
+  principle.images.forEach((image) => {
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.className = "library-image-btn";
+    button.dataset.imageId = image.id;
+
+    if (image.id === selectedLibraryImageId) {
+      button.classList.add("selected");
+    }
+
+    const img = document.createElement("img");
+    img.src = image.src;
+    img.alt = image.name;
+    img.loading = "lazy";
+    img.draggable = false;
+
+    const label = document.createElement("span");
+    label.textContent = image.name;
+
+    button.appendChild(img);
+    button.appendChild(label);
+
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      selectLibraryImage(principle.id, image.id);
+    });
+
+    libraryImagesEl.appendChild(button);
+  });
+}
+
+function selectLibraryPrinciple(principleId, options = {}) {
+  const principle = stickerLibraryData.find((item) => item.id === principleId);
+
+  if (!principle) return;
+
+  selectedLibraryPrincipleId = principle.id;
+  setSelectedPrincipleFirstImage(principle);
+
+  renderLibraryPrinciples();
+
+  if (options.showImages === true) {
+    showLibraryImages(principle);
+  } else {
+    hideLibraryImages();
+  }
+
+  updateLibraryPreview();
+}
+
+function selectLibraryImage(principleId, imageId) {
+  const principle = stickerLibraryData.find((item) => item.id === principleId);
+
+  if (!principle) return;
+
+  const image = principle.images.find((item) => item.id === imageId);
+
+  if (!image) return;
+
+  selectedLibraryPrincipleId = principle.id;
+  selectedLibraryImageId = image.id;
+  selectedLibraryStickerSrc = image.src;
+  selectedLibraryStickerName = image.name;
+
+  showLibraryImages(principle);
+  updateLibraryPreview();
+}
+
+function updateLibraryPreview() {
+  if (stickerLibraryPreview && selectedLibraryStickerSrc) {
+    stickerLibraryPreview.src = selectedLibraryStickerSrc;
+    stickerLibraryPreview.alt = selectedLibraryStickerName || "Sticker digital";
+  }
+
+  if (stickerLibraryName) {
+    stickerLibraryName.textContent = selectedLibraryStickerName || "Sticker";
+  }
+}
+
+async function initializeStickerLibrary() {
+  ensureLibraryDynamicLayout();
+  await loadStickerLibraryJson();
+
+  const firstPrinciple = stickerLibraryData[0];
+
+  if (firstPrinciple && firstPrinciple.images.length > 0) {
+    selectedLibraryPrincipleId = firstPrinciple.id;
+    selectedLibraryImageId = firstPrinciple.images[0].id;
+    selectedLibraryStickerSrc = firstPrinciple.images[0].src;
+    selectedLibraryStickerName = firstPrinciple.images[0].name;
+  }
+
+  renderLibraryPrinciples();
+  hideLibraryImages();
+  updateLibraryPreview();
 }
 
 function openStickerLibrary() {
@@ -773,50 +1555,30 @@ function openStickerLibrary() {
 
   stickerLibraryModal.hidden = false;
   stickerLibraryModal.setAttribute("aria-hidden", "false");
+
+  renderLibraryPrinciples();
+  hideLibraryImages();
+  updateLibraryPreview();
 }
 
 function closeStickerLibrary() {
   if (!stickerLibraryModal) return;
 
+  if (document.activeElement && stickerLibraryModal.contains(document.activeElement)) {
+    document.activeElement.blur();
+  }
+
   stickerLibraryModal.hidden = true;
   stickerLibraryModal.setAttribute("aria-hidden", "true");
 }
 
-function selectStickerFromLibrary(item) {
-  if (!item) return;
-
-  selectedLibraryStickerSrc = item.dataset.stickerSrc || "";
-  selectedLibraryStickerName = item.dataset.stickerName || "Sticker";
-
-  stickerLibraryItems.forEach((libraryItem) => {
-    libraryItem.classList.toggle("selected", libraryItem === item);
-  });
-
-  if (stickerLibraryPreview) {
-    stickerLibraryPreview.src = selectedLibraryStickerSrc;
-  }
-
-  if (stickerLibraryName) {
-    stickerLibraryName.textContent = selectedLibraryStickerName;
-  }
-}
-
 function useSelectedStickerFromLibrary() {
-  if (!selectedLibraryStickerSrc) return;
+  if (!selectedLibraryStickerSrc) {
+    alert("Selecione um sticker primeiro.");
+    return;
+  }
 
-  sticker.src = selectedLibraryStickerSrc;
-  sticker.alt = selectedLibraryStickerName || "Sticker digital";
-
-  showSticker();
-  centerSticker();
-  applyAutomaticStickerSettings();
-
-  stickerStepDone = true;
-  stickerLocked = false;
-  sizeStepDone = false;
-  projectStepDone = false;
-  exportStepDone = false;
-  shareStepDone = false;
+  placeStickerImage(selectedLibraryStickerSrc, selectedLibraryStickerName || "Sticker digital");
 
   closeStickerLibrary();
   closeMobileDrawer();
@@ -824,6 +1586,9 @@ function useSelectedStickerFromLibrary() {
   updateGuideGlow();
 }
 
+/* =========================
+   EXPORTAR / COMPARTIR
+========================= */
 function waitForImage(imageElement) {
   if (!stickerStepDone) {
     return Promise.resolve();
@@ -840,7 +1605,7 @@ function waitForImage(imageElement) {
 }
 
 async function createExportCanvas() {
-  sticker.classList.remove("selected");
+  getStickerElements().forEach((item) => item.classList.remove("selected"));
 
   if (typeof html2canvas === "undefined") {
     alert("A biblioteca de exportação ainda não carregou. Verifique sua internet e tente novamente.");
@@ -848,7 +1613,7 @@ async function createExportCanvas() {
   }
 
   if (stickerStepDone) {
-    await waitForImage(sticker);
+    await Promise.all(getStickerElements().map(waitForImage));
   }
 
   const captureBackground =
@@ -929,6 +1694,9 @@ async function shareImage() {
   }
 }
 
+/* =========================
+   MENÚ MÓVIL
+========================= */
 function closeMobileDrawer() {
   if (!controlsDrawer) return;
 
@@ -1050,6 +1818,9 @@ function clearLongPressTimer() {
   }
 }
 
+/* =========================
+   EVENTOS
+========================= */
 applyTextBtn.addEventListener("click", () => {
   applyText();
 
@@ -1058,7 +1829,17 @@ applyTextBtn.addEventListener("click", () => {
   }
 });
 
+if (materialImportBtn && materialImportInput) {
+  materialImportBtn.addEventListener("click", () => {
+    materialImportInput.click();
+  });
+
+  materialImportInput.addEventListener("change", importMaterialFile);
+}
+
 scriptureInput.addEventListener("input", () => {
+  setMaterialImportStatus();
+
   if (scriptureInput.value.trim().length === 0) {
     scriptureText.textContent = "";
     textStepDone = false;
@@ -1081,6 +1862,18 @@ projectNameInput.addEventListener("input", () => {
   shareStepDone = false;
 });
 
+if (stickerUploadBtn && stickerUpload) {
+  stickerUploadBtn.addEventListener("click", () => {
+    if (!canAddSticker()) {
+      showStickerLimitNotice();
+      updateStickerCounter();
+      return;
+    }
+
+    stickerUpload.click();
+  });
+}
+
 stickerUpload.addEventListener("change", loadStickerFromFile);
 
 if (openStickerLibraryBtn) {
@@ -1092,14 +1885,12 @@ if (closeStickerLibraryBtn) {
 }
 
 if (useSelectedStickerBtn) {
-  useSelectedStickerBtn.addEventListener("click", useSelectedStickerFromLibrary);
-}
-
-stickerLibraryItems.forEach((item) => {
-  item.addEventListener("click", () => {
-    selectStickerFromLibrary(item);
+  useSelectedStickerBtn.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    useSelectedStickerFromLibrary();
   });
-});
+}
 
 if (stickerLibraryModal) {
   stickerLibraryModal.addEventListener("click", (event) => {
@@ -1109,15 +1900,8 @@ if (stickerLibraryModal) {
   });
 }
 
-sticker.addEventListener("pointerdown", startDrag, { passive: false });
-
-sticker.addEventListener("dragstart", (event) => {
-  event.preventDefault();
-});
-
-sticker.addEventListener("contextmenu", (event) => {
-  event.preventDefault();
-});
+setupStickerElement(sticker);
+updateStickerCounter();
 
 resetStickerBtn.addEventListener("click", () => {
   centerSticker();
@@ -1158,11 +1942,11 @@ sizeRange.addEventListener("change", () => {
 });
 
 edgeSoftnessRange.addEventListener("input", () => {
-  updateStickerEffects(true, false);
+  updateStickerEffects(true);
 });
 
 colorBoostRange.addEventListener("input", () => {
-  updateStickerEffects(false, true);
+  updateStickerEffects(true);
 });
 
 exportBtn.addEventListener("click", async () => {
@@ -1239,6 +2023,14 @@ if (closeDrawerBtn) {
   });
 }
 
+captureArea.addEventListener("click", (event) => {
+  if (!isMobileView()) return;
+  if (stickerLibraryModal && !stickerLibraryModal.hidden) return;
+  if (event.target.classList && event.target.classList.contains("sticker")) return;
+
+  openFloatingToolbar();
+});
+
 captureArea.addEventListener("pointerdown", (event) => {
   if (!isMobileView()) return;
 
@@ -1272,8 +2064,8 @@ captureArea.addEventListener("pointercancel", () => {
 });
 
 document.addEventListener("click", (event) => {
-  if (event.target !== sticker) {
-    sticker.classList.remove("selected");
+  if (!event.target.classList || !event.target.classList.contains("sticker")) {
+    getStickerElements().forEach((item) => item.classList.remove("selected"));
   }
 
   if (!isMobileView()) return;
@@ -1284,7 +2076,13 @@ document.addEventListener("click", (event) => {
   const clickedTrigger = mobileMenuTrigger && mobileMenuTrigger.contains(event.target);
   const clickedLibrary = stickerLibraryModal && stickerLibraryModal.contains(event.target);
 
-  if (!clickedToolbar && !clickedDrawer && !clickedAdvanced && !clickedTrigger && !clickedLibrary) {
+  if (
+    !clickedToolbar &&
+    !clickedDrawer &&
+    !clickedAdvanced &&
+    !clickedTrigger &&
+    !clickedLibrary
+  ) {
     closeMobileDrawer();
     closeAdvancedSubmenu();
   }
@@ -1298,19 +2096,11 @@ window.addEventListener("resize", () => {
   updateStartGlow();
 });
 
-window.addEventListener("load", () => {
-  const firstLibraryItem =
-    document.querySelector(".sticker-library-item.selected") ||
-    document.querySelector(".sticker-library-item");
-
-  if (firstLibraryItem) {
-    selectStickerFromLibrary(firstLibraryItem);
-  }
-
-  sticker.setAttribute("draggable", "false");
-  sticker.style.touchAction = "none";
-  sticker.style.userSelect = "none";
-  sticker.style.webkitUserDrag = "none";
+/* =========================
+   INICIO
+========================= */
+window.addEventListener("load", async () => {
+  setupStickerElement(sticker);
 
   hideSticker();
 
@@ -1321,7 +2111,9 @@ window.addEventListener("load", () => {
   updateOpacity(false);
   updateSize(false);
   applyBackground(false);
-  updateStickerEffects(false, false);
+  updateStickerEffects(false);
+
+  await initializeStickerLibrary();
 
   const projectWasOpened = loadProject(false);
 

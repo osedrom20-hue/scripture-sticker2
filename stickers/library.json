@@ -1,0 +1,484 @@
+[
+  {
+    "id": "arbitrio",
+    "name": "Arbítrio",
+    "folder": "stickers/principios/arbitrio",
+    "images": [
+      {
+        "id": "arbitrio-01",
+        "name": "Arbitrio 01",
+        "src": "stickers/principios/arbitrio/arbitrio-01.png"
+      }
+    ]
+  },
+  {
+    "id": "arrependimento",
+    "name": "Arrependimento",
+    "folder": "stickers/principios/arrependimento",
+    "images": [
+      {
+        "id": "arrependimento-01",
+        "name": "Arrependimento 01",
+        "src": "stickers/principios/arrependimento/arrependimento-01.png"
+      }
+    ]
+  },
+  {
+    "id": "batismo",
+    "name": "Batismo",
+    "folder": "stickers/principios/batismo",
+    "images": [
+      {
+        "id": "batismo-01",
+        "name": "Batismo 01",
+        "src": "stickers/principios/batismo/batismo-01.png"
+      },
+      {
+        "id": "batismo-02",
+        "name": "Batismo 02",
+        "src": "stickers/principios/batismo/batismo-02.png"
+      }
+    ]
+  },
+  {
+    "id": "caridade",
+    "name": "Caridade",
+    "folder": "stickers/principios/caridade",
+    "images": [
+      {
+        "id": "caridade-01",
+        "name": "Caridade 01",
+        "src": "stickers/principios/caridade/caridade-01.png"
+      }
+    ]
+  },
+  {
+    "id": "criacao",
+    "name": "Criação",
+    "folder": "stickers/principios/criacao",
+    "images": [
+      {
+        "id": "criacao-01",
+        "name": "Criacao 01",
+        "src": "stickers/principios/criacao/criacao-01.png"
+      }
+    ]
+  },
+  {
+    "id": "crucificacao",
+    "name": "Crucificação",
+    "folder": "stickers/principios/crucificacao",
+    "images": [
+      {
+        "id": "crucificacao-01",
+        "name": "Crucificacao 01",
+        "src": "stickers/principios/crucificacao/crucificacao-01.png"
+      },
+      {
+        "id": "crusificacao-02",
+        "name": "Crusificacao 02",
+        "src": "stickers/principios/crucificacao/crusificacao-02.png"
+      }
+    ]
+  },
+  {
+    "id": "dia-do-senhor",
+    "name": "Dia do Senhor",
+    "folder": "stickers/principios/dia-do-senhor",
+    "images": [
+      {
+        "id": "dia-do-senhor-01",
+        "name": "Dia Do Senhor 01",
+        "src": "stickers/principios/dia-do-senhor/dia-do-senhor-01.png"
+      }
+    ]
+  },
+  {
+    "id": "dom-de-linguas",
+    "name": "Dom de Línguas",
+    "folder": "stickers/principios/dom-de-linguas",
+    "images": [
+      {
+        "id": "dom-de-linguas-01",
+        "name": "Dom De Linguas 01",
+        "src": "stickers/principios/dom-de-linguas/dom-de-linguas-01.png"
+      }
+    ]
+  },
+  {
+    "id": "dons-do-espirito",
+    "name": "Dons do Espírito",
+    "folder": "stickers/principios/dons-do-espirito",
+    "images": [
+      {
+        "id": "dons-do-espirito-01",
+        "name": "Dons Do Espirito 01",
+        "src": "stickers/principios/dons-do-espirito/dons-do-espirito-01.png"
+      }
+    ]
+  },
+  {
+    "id": "escrituras",
+    "name": "Escrituras",
+    "folder": "stickers/principios/escrituras",
+    "images": [
+      {
+        "id": "escrituras-01",
+        "name": "Escrituras 01",
+        "src": "stickers/principios/escrituras/escrituras-01.png"
+      },
+      {
+        "id": "escrituras-02",
+        "name": "Escrituras 02",
+        "src": "stickers/principios/escrituras/escrituras-02.png"
+      }
+    ]
+  },
+  {
+    "id": "esperanca",
+    "name": "Esperança",
+    "folder": "stickers/principios/esperanca",
+    "images": [
+      {
+        "id": "esperanca-01",
+        "name": "Esperanca 01",
+        "src": "stickers/principios/esperanca/esperanca-01.png"
+      }
+    ]
+  },
+  {
+    "id": "espirito-santo",
+    "name": "Espírito Santo",
+    "folder": "stickers/principios/espirito-santo",
+    "images": [
+      {
+        "id": "espirito-santo-01",
+        "name": "Espirito Santo 01",
+        "src": "stickers/principios/espirito-santo/espirito-santo-01.png"
+      },
+      {
+        "id": "espirito-santo-02",
+        "name": "Espirito Santo 02",
+        "src": "stickers/principios/espirito-santo/espirito-santo-02.png"
+      }
+    ]
+  },
+  {
+    "id": "fe",
+    "name": "Fé",
+    "folder": "stickers/principios/fe",
+    "images": [
+      {
+        "id": "fe-01",
+        "name": "Fe 01",
+        "src": "stickers/principios/fe/fe-01.png"
+      }
+    ]
+  },
+  {
+    "id": "genealogia",
+    "name": "Genealogia",
+    "folder": "stickers/principios/genealogia",
+    "images": [
+      {
+        "id": "genealogia-01",
+        "name": "Genealogia 01",
+        "src": "stickers/principios/genealogia/genealogia-01.png"
+      }
+    ]
+  },
+  {
+    "id": "humildade",
+    "name": "Humildade",
+    "folder": "stickers/principios/humildade",
+    "images": [
+      {
+        "id": "humildade-01",
+        "name": "Humildade 01",
+        "src": "stickers/principios/humildade/humildade-01.png"
+      }
+    ]
+  },
+  {
+    "id": "jardim-do-getsemani",
+    "name": "Jardim do Getsêmani",
+    "folder": "stickers/principios/jardim-do-getsemani",
+    "images": [
+      {
+        "id": "jardim-do-getsemani-01",
+        "name": "Jardim Do Getsemani 01",
+        "src": "stickers/principios/jardim-do-getsemani/jardim-do-getsemani-01.png"
+      }
+    ]
+  },
+  {
+    "id": "jeova",
+    "name": "Jeová",
+    "folder": "stickers/principios/jeova",
+    "images": [
+      {
+        "id": "jehova-02",
+        "name": "Jehova 02",
+        "src": "stickers/principios/jeova/jehova-02.png"
+      },
+      {
+        "id": "jeova-01",
+        "name": "Jeova 01",
+        "src": "stickers/principios/jeova/jeova-01.png"
+      }
+    ]
+  },
+  {
+    "id": "lei-de-moises",
+    "name": "Lei de Moisés",
+    "folder": "stickers/principios/lei-de-moises",
+    "images": [
+      {
+        "id": "lei-de-moises-01",
+        "name": "Lei De Moises 01",
+        "src": "stickers/principios/lei-de-moises/lei-de-moises-01.png"
+      }
+    ]
+  },
+  {
+    "id": "liahona",
+    "name": "Liahona",
+    "folder": "stickers/principios/liahona",
+    "images": [
+      {
+        "id": "liahona-01",
+        "name": "Liahona 01",
+        "src": "stickers/principios/liahona/liahona-01.png"
+      }
+    ]
+  },
+  {
+    "id": "livro-de-mormon",
+    "name": "Livro de Mórmon",
+    "folder": "stickers/principios/livro-de-mormon",
+    "images": [
+      {
+        "id": "livro-de-mormon-01",
+        "name": "Livro De Mormon 01",
+        "src": "stickers/principios/livro-de-mormon/livro-de-mormon-01.png"
+      },
+      {
+        "id": "livro-de-mormon-02",
+        "name": "Livro De Mormon 02",
+        "src": "stickers/principios/livro-de-mormon/livro-de-mormon-02.png"
+      }
+    ]
+  },
+  {
+    "id": "manasses",
+    "name": "Manassés",
+    "folder": "stickers/principios/manasses",
+    "images": [
+      {
+        "id": "manasses-01",
+        "name": "Manasses 01",
+        "src": "stickers/principios/manasses/manasses-01.png"
+      }
+    ]
+  },
+  {
+    "id": "mandamentos-de-deus",
+    "name": "Mandamentos de Deus",
+    "folder": "stickers/principios/mandamentos-de-deus",
+    "images": [
+      {
+        "id": "mandamentos-de-deus-01",
+        "name": "Mandamentos De Deus 01",
+        "src": "stickers/principios/mandamentos-de-deus/mandamentos-de-deus-01.png"
+      }
+    ]
+  },
+  {
+    "id": "nosso-salvador",
+    "name": "Nosso Salvador",
+    "folder": "stickers/principios/nosso-salvador",
+    "images": [
+      {
+        "id": "Jesucristo-01",
+        "name": "Jesucristo 01",
+        "src": "stickers/principios/nosso-salvador/Jesucristo-01.png"
+      },
+      {
+        "id": "Jesucristo-02",
+        "name": "Jesucristo 02",
+        "src": "stickers/principios/nosso-salvador/Jesucristo-02.png"
+      },
+      {
+        "id": "Jesucristo-03",
+        "name": "Jesucristo 03",
+        "src": "stickers/principios/nosso-salvador/Jesucristo-03.png"
+      },
+      {
+        "id": "Jesucristo-04",
+        "name": "Jesucristo 04",
+        "src": "stickers/principios/nosso-salvador/Jesucristo-04.png"
+      },
+      {
+        "id": "Jesucristo-05",
+        "name": "Jesucristo 05",
+        "src": "stickers/principios/nosso-salvador/Jesucristo-05.png"
+      },
+      {
+        "id": "Jesucristo-06",
+        "name": "Jesucristo 06",
+        "src": "stickers/principios/nosso-salvador/Jesucristo-06.png"
+      },
+      {
+        "id": "jesucristo-07",
+        "name": "Jesucristo 07",
+        "src": "stickers/principios/nosso-salvador/jesucristo-07.png"
+      }
+    ]
+  },
+  {
+    "id": "oracao",
+    "name": "Oração",
+    "folder": "stickers/principios/oracao",
+    "images": [
+      {
+        "id": "oracao-01",
+        "name": "Oracao 01",
+        "src": "stickers/principios/oracao/oracao-01.png"
+      },
+      {
+        "id": "oracao-02",
+        "name": "Oracao 02",
+        "src": "stickers/principios/oracao/oracao-02.png"
+      },
+      {
+        "id": "oracao-03",
+        "name": "Oracao 03",
+        "src": "stickers/principios/oracao/oracao-03.png"
+      },
+      {
+        "id": "oracao-04",
+        "name": "Oracao 04",
+        "src": "stickers/principios/oracao/oracao-04.png"
+      }
+    ]
+  },
+  {
+    "id": "pascoa",
+    "name": "Páscoa",
+    "folder": "stickers/principios/pascoa",
+    "images": [
+      {
+        "id": "pascoa-01",
+        "name": "Pascoa 01",
+        "src": "stickers/principios/pascoa/pascoa-01.png"
+      }
+    ]
+  },
+  {
+    "id": "perseverar-ate-o-fim",
+    "name": "Perseverar até o Fim",
+    "folder": "stickers/principios/perseverar-ate-o-fim",
+    "images": [
+      {
+        "id": "perseverar-ate-o-fim-01",
+        "name": "Perseverar Ate O Fim 01",
+        "src": "stickers/principios/perseverar-ate-o-fim/perseverar-ate-o-fim-01.png"
+      }
+    ]
+  },
+  {
+    "id": "plano-de-salvacao",
+    "name": "Plano de Salvação",
+    "folder": "stickers/principios/plano-de-salvacao",
+    "images": [
+      {
+        "id": "plano-de-salvacao-01",
+        "name": "Plano De Salvacao 01",
+        "src": "stickers/principios/plano-de-salvacao/plano-de-salvacao-01.png"
+      }
+    ]
+  },
+  {
+    "id": "primeira-visao",
+    "name": "Primeira Visão",
+    "folder": "stickers/principios/primeira-visao",
+    "images": [
+      {
+        "id": "primeira-visao-01",
+        "name": "Primeira Visao 01",
+        "src": "stickers/principios/primeira-visao/primeira-visao-01.png"
+      }
+    ]
+  },
+  {
+    "id": "ressurreicao",
+    "name": "Ressurreição",
+    "folder": "stickers/principios/ressurreicao",
+    "images": [
+      {
+        "id": "ressurreicao-01",
+        "name": "Ressurreicao 01",
+        "src": "stickers/principios/ressurreicao/ressurreicao-01.png"
+      },
+      {
+        "id": "ressurreicao-02",
+        "name": "Ressurreicao 02",
+        "src": "stickers/principios/ressurreicao/ressurreicao-02.png"
+      }
+    ]
+  },
+  {
+    "id": "Templos",
+    "name": "Templos",
+    "folder": "stickers/principios/Templos",
+    "images": [
+      {
+        "id": "templo-01",
+        "name": "Templo 01",
+        "src": "stickers/principios/Templos/templo-01.png"
+      },
+      {
+        "id": "templo-brasilia-01",
+        "name": "Templo Brasilia 01",
+        "src": "stickers/principios/Templos/templo-brasilia-01.png"
+      },
+      {
+        "id": "templo-campinas-01",
+        "name": "Templo Campinas 01",
+        "src": "stickers/principios/Templos/templo-campinas-01.png"
+      },
+      {
+        "id": "templo-curitiba-01",
+        "name": "Templo Curitiba 01",
+        "src": "stickers/principios/Templos/templo-curitiba-01.png"
+      },
+      {
+        "id": "templo-porto-alegre-01",
+        "name": "Templo Porto Alegre 01",
+        "src": "stickers/principios/Templos/templo-porto-alegre-01.png"
+      },
+      {
+        "id": "templo-recife-01",
+        "name": "Templo Recife 01",
+        "src": "stickers/principios/Templos/templo-recife-01.png"
+      },
+      {
+        "id": "templo-sao-paulo-01",
+        "name": "Templo Sao Paulo 01",
+        "src": "stickers/principios/Templos/templo-sao-paulo-01.png"
+      }
+    ]
+  },
+  {
+    "id": "tres-discipulos-nefitas",
+    "name": "Tres Discipulos Nefitas",
+    "folder": "stickers/principios/tres-discipulos-nefitas",
+    "images": [
+      {
+        "id": "tres-discipulos-nefitas-01",
+        "name": "Tres Discipulos Nefitas 01",
+        "src": "stickers/principios/tres-discipulos-nefitas/tres-discipulos-nefitas-01.png"
+      }
+    ]
+  }
+]
